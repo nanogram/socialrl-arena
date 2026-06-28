@@ -90,12 +90,12 @@ function checkSpecMarkers() {
     ["db/schema.sql", schema, ["create table if not exists routing_decisions", "create table if not exists report_jobs", "decision_review", "evidence_manifest", "model_routing", "model_routing_summary", "first_token_latency_ms"]],
     ["render.yaml", render, ["healthCheckPath: /api/health", "fromDatabase:", "socialrl-arena-db"]],
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "recordProviderFailure", "routerModelName"]],
-    ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["emotionally_sensitive", "stalled", "chaotic"]],
+    ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["buildReportEvalInputs", "fullTranscript", "messageLatency", "evidenceManifest", "emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
     ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports"]],
     ["scripts/load-test.js", loadTest, ["LOAD_TEST_OUTPUT_PATH", "passed"]],
     ["scripts/run-target-load.js", targetLoad, ["SOCIALRL_STORAGE", "target-load-latest.json", "LOAD_TEST_MESSAGES_PER_ROOM"]],
-    ["scripts/final-audit.js", finalAudit, ["demoScenarioFidelityCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
+    ["scripts/final-audit.js", finalAudit, ["demoScenarioFidelityCheck", "reportJudgePromptCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
     ["package.json", pkg, ["load-test:target-artifact"]],
   ]) {
     for (const marker of markers) {

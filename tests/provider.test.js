@@ -84,6 +84,22 @@ async function main() {
     assert.equal(judgedMediator.summary, "Mediator made the clearest decision-oriented intervention.");
     assert.equal(judgedMediator.policyDiff.before, draftMediator.policyDiff.before);
     assert.equal(judgedMediator.policyDiff.rationale, "Raise the speak threshold unless the room is choosing.");
+    const reportCall = calls.find((call) => call.body.text.format.name === "shape_report_judge");
+    const reportPrompt = JSON.parse(reportCall.body.input[1].content);
+    assert.equal(reportPrompt.evalInputs.fullTranscript.length, room.messages.length);
+    assert.equal(reportPrompt.evalInputs.fullTranscript[0].content, triggerMessage.content);
+    assert.ok(Array.isArray(reportPrompt.evalInputs.agentDecisions));
+    assert.ok(Array.isArray(reportPrompt.evalInputs.routingDecisions));
+    assert.ok(Array.isArray(reportPrompt.evalInputs.messageFeedback));
+    assert.ok(Array.isArray(reportPrompt.evalInputs.sessionFeedback));
+    assert.ok(Array.isArray(reportPrompt.evalInputs.messageLatency));
+    assert.equal(reportPrompt.evalInputs.agentConfigs.length, 3);
+    assert.equal(reportPrompt.evalInputs.evidenceManifest.transcript.messages, room.messages.length);
+    assert.equal(reportPrompt.draftReport.evidenceManifest.transcript.messages, room.messages.length);
+    assert.ok(
+      reportPrompt.draftReport.agents.every((agent) => agent.decisionReview && agent.routingScores),
+      "report judge prompt should include per-agent decision review and routing scores",
+    );
 
     assert.ok(calls.every((call) => call.url === "https://api.openai.test/v1/responses"));
     assert.ok(calls.every((call) => call.headers.Authorization === "Bearer test-key"));

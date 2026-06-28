@@ -25,6 +25,7 @@ function main() {
     ...requiredFiles.map((file) => fileCheck(file)),
     gitRemoteCheck(),
     debugTelemetryCheck(),
+    reportJudgePromptCheck(),
     ...latestDemoArtifactChecks(),
     ...targetLoadArtifactChecks(),
     ...requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label)),
@@ -73,6 +74,29 @@ function debugTelemetryCheck() {
     detail: missing.length
       ? `debug/eval UI missing ${missing.join(", ")}`
       : "debug/eval UI includes live latency, report queue, policy, feedback, and model-step telemetry",
+  };
+}
+
+function reportJudgePromptCheck() {
+  const promptPath = path.join(process.cwd(), "src", "prompts.js");
+  const prompts = fs.existsSync(promptPath) ? fs.readFileSync(promptPath, "utf8") : "";
+  const requiredMarkers = [
+    "buildReportEvalInputs",
+    "fullTranscript",
+    "agentDecisions",
+    "messageLatency",
+    "agentConfigs",
+    "evidenceManifest",
+    "decisionReview",
+    "routingScores",
+  ];
+  const missing = requiredMarkers.filter((marker) => !prompts.includes(marker));
+  return {
+    name: "prompt:report-eval-inputs",
+    status: missing.length ? "fail" : "pass",
+    detail: missing.length
+      ? `report judge prompt missing ${missing.join(", ")}`
+      : "report judge prompt includes transcript, decisions, feedback, latency, agent config, evidence, decision review, and routing scores",
   };
 }
 

@@ -137,6 +137,7 @@ function buildReportJudgePrompt({ room, draftReport }) {
             },
           ],
         },
+        evalInputs: buildReportEvalInputs(room, draftReport),
         room: compactPromptRoom(room),
         draftReport: draftReport ? compactPromptReport(draftReport) : null,
       },
@@ -166,6 +167,55 @@ function compactPromptRoom(room) {
   };
 }
 
+function buildReportEvalInputs(room, draftReport) {
+  const messages = Array.isArray(room.messages) ? room.messages : [];
+  const aiMessages = messages.filter((message) => message.senderType === "ai");
+  const evidenceManifest = draftReport && draftReport.evidenceManifest ? draftReport.evidenceManifest : null;
+
+  return {
+    scenarioMetadata: room.scenario,
+    fullTranscript: messages.map(compactPromptMessage),
+    agentDecisions: Array.isArray(room.decisions) ? room.decisions : [],
+    routingDecisions: Array.isArray(room.routingDecisions) ? room.routingDecisions : [],
+    messageFeedback: Array.isArray(room.feedback) ? room.feedback : [],
+    sessionFeedback: Array.isArray(room.sessionFeedback) ? room.sessionFeedback : [],
+    messageLatency: aiMessages.map((message) => ({
+      messageId: message.id,
+      agentId: message.agentId || null,
+      decisionId: message.decisionId || null,
+      latencyMs: message.latencyMs,
+      firstTokenLatencyMs: message.firstTokenLatencyMs,
+      tokenCount: message.tokenCount,
+      modelName: message.modelName,
+      promptVersion: message.promptVersion,
+      policyVersion: message.policyVersion,
+    })),
+    agentConfigs: evidenceManifest ? evidenceManifest.agentConfigs || [] : [],
+    evidenceManifest,
+  };
+}
+
+function compactPromptMessage(message) {
+  return {
+    id: message.id,
+    senderId: message.senderId || null,
+    senderName: message.senderName,
+    senderType: message.senderType,
+    agentId: message.agentId || null,
+    content: message.content,
+    createdAt: message.createdAt,
+    replyToMessageId: message.replyToMessageId || null,
+    decisionId: message.decisionId || null,
+    feedbackTags: Array.isArray(message.feedback) ? message.feedback.map((entry) => entry.tag) : [],
+    latencyMs: message.latencyMs,
+    firstTokenLatencyMs: message.firstTokenLatencyMs,
+    tokenCount: message.tokenCount,
+    modelName: message.modelName,
+    promptVersion: message.promptVersion,
+    policyVersion: message.policyVersion,
+  };
+}
+
 function compactPromptReport(report) {
   return {
     id: report.id,
@@ -177,6 +227,8 @@ function compactPromptReport(report) {
     roomStats: report.roomStats,
     sessionFeedbackSummary: report.sessionFeedbackSummary,
     modelRoutingSummary: report.modelRoutingSummary,
+    evidenceManifest: report.evidenceManifest,
+    systemPerformance: report.systemPerformance,
     agents: report.agents.map((agentReport) => ({
       agentId: agentReport.agentId,
       agentName: agentReport.agentName,
@@ -187,6 +239,8 @@ function compactPromptReport(report) {
       failureModes: agentReport.failureModes,
       bestMessages: agentReport.bestMessages,
       worstMessages: agentReport.worstMessages,
+      decisionReview: agentReport.decisionReview,
+      routingScores: agentReport.routingScores,
       policyDiff: agentReport.policyDiff,
       routingRecommendation: agentReport.routingRecommendation,
     })),
@@ -200,6 +254,7 @@ module.exports = {
   buildMessagePrompt,
   buildReportJudgePrompt,
   buildRouterPrompt,
+  buildReportEvalInputs,
   compactPromptReport,
   compactPromptRoom,
 };

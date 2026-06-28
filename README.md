@@ -144,6 +144,7 @@ docker compose exec app npm run migrate:postgres
 - Context-aware model-routing evidence showing fast tiers for classification/decision/routing/feedback and strong tiers for emotional/conflict responses, reports, and policy repair
 - Optional external report judge for Shape Performance Reports
 - Versioned decision/router/message/report judge prompt templates
+- Report judge prompts include full transcript, decisions, routing, feedback, latency, agent config, and evidence manifests
 - Synthetic WebSocket load test with message acknowledgement, first-token, feedback acknowledgement, report throughput, and socket-stability metrics
 - Machine-readable target-load artifact for final audit
 - Reported p50/p95/p99 fanout, first-token, and full-response latency fields
