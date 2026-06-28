@@ -11,6 +11,12 @@ SocialRL Arena is a realtime group-chat eval demo. The first slice proves the co
 
 This implementation uses deterministic local agents by default so the product loop works without API keys. Optional OpenAI Responses and generic HTTP adapters can take over decision, routing, message, and report-judge stages while preserving the same event and report contracts.
 
+## Demo Video
+
+<video controls src="https://nanogram.github.io/socialrl-arena/assets/socialrl-demo.mp4" title="SocialRL Arena demo video"></video>
+
+If the embedded player does not render in your GitHub view, open the [demo video page](https://nanogram.github.io/socialrl-arena/) or the [direct MP4](https://nanogram.github.io/socialrl-arena/assets/socialrl-demo.mp4).
+
 ## Run Locally
 
 ```bash
