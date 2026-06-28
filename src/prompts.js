@@ -2,7 +2,7 @@ const PROMPT_VERSIONS = {
   agentDecision: "agent_decision_prompt_v1",
   router: "router_prompt_v1",
   message: "group_message_prompt_v1",
-  reportJudge: "shape_report_judge_prompt_v1",
+  reportJudge: "agent_report_judge_prompt_v1",
 };
 
 function buildAgentDecisionPrompt({ room, triggerMessage }) {
@@ -104,7 +104,7 @@ function buildReportJudgePrompt({ room, draftReport }) {
       "Evaluate AI agents as multiplayer group-chat participants. Review the deterministic draft report and improve only the narrative judgment fields. Preserve measured metrics, ids, evidence, and policy text.",
     user: JSON.stringify(
       {
-        task: "Return a structured judge patch for the Shape Performance Report.",
+        task: "Return a structured judge patch for the Agent Performance Report.",
         rules: [
           "Judge whether each agent improved the group dynamic, not only factual helpfulness.",
           "Do not invent feedback or transcript evidence.",

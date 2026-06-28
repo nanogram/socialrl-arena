@@ -49,7 +49,7 @@ async function main() {
         roomId,
         chatUrl: `${baseUrl}/rooms/${roomId}`,
         reportUrl: `${baseUrl}/rooms/${roomId}/report`,
-        shapeUrl: `${baseUrl}/rooms/${roomId}/shapes/mediator_v1`,
+        agentReviewUrl: `${baseUrl}/rooms/${roomId}/agents/mediator_v1`,
         exportPath: `demo-artifacts/${roomId}-export.json`,
         linksPath: `demo-artifacts/${roomId}-links.md`,
         reports: finalState.reports.length,
@@ -129,7 +129,7 @@ function linksMarkdown(id, state) {
 
 - Chat: ${baseUrl}/rooms/${id}
 - Report: ${baseUrl}/rooms/${id}/report
-- Mediator Shape Review: ${baseUrl}/rooms/${id}/shapes/mediator_v1
+- Mediator Agent Review: ${baseUrl}/rooms/${id}/agents/mediator_v1
 - Export: ${baseUrl}/api/rooms/${id}/export
 
 ## Summary

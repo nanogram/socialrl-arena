@@ -84,7 +84,7 @@ async function main() {
     assert.equal(judgedMediator.summary, "Mediator made the clearest decision-oriented intervention.");
     assert.equal(judgedMediator.policyDiff.before, draftMediator.policyDiff.before);
     assert.equal(judgedMediator.policyDiff.rationale, "Raise the speak threshold unless the room is choosing.");
-    const reportCall = calls.find((call) => call.body.text.format.name === "shape_report_judge");
+    const reportCall = calls.find((call) => call.body.text.format.name === "agent_report_judge");
     const reportPrompt = JSON.parse(reportCall.body.input[1].content);
     assert.equal(reportPrompt.evalInputs.fullTranscript.length, room.messages.length);
     assert.equal(reportPrompt.evalInputs.fullTranscript[0].content, triggerMessage.content);
@@ -105,7 +105,7 @@ async function main() {
     assert.ok(calls.every((call) => call.headers.Authorization === "Bearer test-key"));
     assert.deepEqual(
       calls.map((call) => call.body.text.format.name),
-      ["agent_decisions", "routing_result", "group_chat_message", "shape_report_judge"],
+      ["agent_decisions", "routing_result", "group_chat_message", "agent_report_judge"],
     );
     assert.deepEqual(
       calls.map((call) => call.body.model),
@@ -205,7 +205,7 @@ function responseForSchema(schemaName) {
     };
   }
 
-  if (schemaName === "shape_report_judge") {
+  if (schemaName === "agent_report_judge") {
     return {
       summary: "The model judge found the run useful but too eager.",
       agents: [

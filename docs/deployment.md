@@ -104,7 +104,7 @@ npm run load-test:target
 - `/rooms/:roomId` - realtime chat and debug/eval view
 - `/create` - create-room dashboard and recent rooms
 - `/rooms/:roomId/report` - latest session report page
-- `/rooms/:roomId/shapes/:agentId` - latest Shape review page for one agent
+- `/rooms/:roomId/agents/:agentId` - latest agent review page
 
 ## API Routes
 
@@ -115,4 +115,4 @@ npm run load-test:target
 - `/api/rooms/:roomId/export` - transcript and report export
 - `/api/rooms/:roomId/reports/latest` - latest report JSON
 - `/api/rooms/:roomId/reports/:reportId` - specific report JSON
-- `/api/rooms/:roomId/shapes/:agentId` - latest Shape report JSON for one agent
+- `/api/rooms/:roomId/agents/:agentId` - latest agent report JSON for one agent

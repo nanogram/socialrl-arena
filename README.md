@@ -6,7 +6,7 @@ SocialRL Arena is a realtime group-chat eval demo. The first slice proves the co
 2. AI agents decide whether to speak, wait, or stay silent.
 3. AI responses stream into the room.
 4. Humans tag AI messages with group-chat-native feedback.
-5. Ending the session generates Shape Performance Reports.
+5. Ending the session generates Agent Performance Reports.
 6. The report produces improved participation policies and before/after comparison data.
 
 This implementation uses deterministic local agents by default so the product loop works without API keys. Optional OpenAI Responses and generic HTTP adapters can take over decision, routing, message, and report-judge stages while preserving the same event and report contracts.
@@ -105,19 +105,19 @@ docker compose exec app npm run migrate:postgres
 
 - Landing page at `/` with product loop entry points
 - Create and join rooms through `/rooms/:roomId`
-- Join/update a display name and see active human participants plus selected AI Shapes
+- Join/update a display name and see active human participants plus selected AI agents
 - Invite links
 - Scenario selection
 - Nine scenarios covering planning, drama/conflict, casual hangout, fandom/RP, study/work, advice, game night, debate, and support/emotional rooms
 - Weekend Trip Planning demo covers budget, nightlife, nature, and a derailing fourth friend
 - Three agents: Mediator, Vibe Friend, and Observer
-- Room setup enforces 2-3 selected AI Shapes per session
+- Room setup enforces 2-3 selected AI agents per session
 - WebSocket fanout
 - Reply-to message targeting for human replies and AI responses to trigger messages
 - Agent speak/wait/stay-silent decisions
-- Decision metadata includes target users when a Shape should include a quieter participant
+- Decision metadata includes target users when an agent should include a quieter participant
 - Explicit stayed-silent and waited WebSocket events for debug/eval views
-- Router decision panel with selected Shape, blocked Shapes, group state, and candidate scores
+- Router decision panel with selected agent, blocked agents, group state, and candidate scores
 - Rule-based router policy for planning, tense, emotionally sensitive, chaotic, stalled, playful/high-momentum, and feedback-adjusted turns
 - Streaming AI message simulation
 - WebSocket payloads include spec-style snake_case aliases alongside internal camelCase fields
@@ -126,8 +126,8 @@ docker compose exec app npm run migrate:postgres
 - Full AI-message feedback taxonomy for timing, social awareness, usefulness, personality, and message quality
 - Session-level feedback, including route-next agent preference
 - Normal-mode end-of-session feedback prompt for useful/annoying/route-next/reached-decision/invite-again signals
-- Late end-of-session feedback refreshes the latest Shape Report instead of being ignored
-- Shape Performance Reports
+- Late end-of-session feedback refreshes the latest Agent Report instead of being ignored
+- Agent Performance Reports
 - Agent routing success, messages-per-minute, human-before/after, human momentum lift, and suitability scores
 - Reply-targeting, target-user, wrong-person, and quiet-participant targeting stats in agent reports
 - Per-agent participation decision review showing recent speak/wait/stay-silent reasons, trigger messages, router selection, and feedback outcome
@@ -137,7 +137,7 @@ docker compose exec app npm run migrate:postgres
 - Side-by-side before/after comparison with baseline and improved metrics
 - Run Archive card on reports summarizes baseline/current run transcripts, decisions, feedback, and reports
 - Exported run archive preserves baseline and improved transcripts, decisions, feedback, and reports
-- Agent-specific Shape pages with scorecard, quantitative stats, failure modes, policy diff, routing recommendation, and best/worst message context
+- Agent-specific review pages with scorecard, quantitative stats, failure modes, policy diff, routing recommendation, and best/worst message context
 - Normal chat mode keeps active participants, invite, end-session, and report actions visible without exposing debug panels
 - Active policy/model/prompt visibility in the debug/eval panel
 - Live debug/eval telemetry for latency, report queue, feedback counts, group state, active policy, and model steps
@@ -150,7 +150,7 @@ docker compose exec app npm run migrate:postgres
 - Optional OpenAI Responses API provider hook
 - Per-stage OpenAI model routing for decision, router, message, and report calls
 - Context-aware model-routing evidence showing fast tiers for classification/decision/routing/feedback and strong tiers for emotional/conflict responses, reports, and policy repair
-- Optional external report judge for Shape Performance Reports
+- Optional external report judge for Agent Performance Reports
 - Versioned decision/router/message/report judge prompt templates
 - Report judge prompts include full transcript, decisions, routing, feedback, latency, agent config, and evidence manifests
 - Synthetic WebSocket load test with message acknowledgement, first-token, feedback acknowledgement, report throughput, and socket-stability metrics
@@ -173,7 +173,7 @@ docker compose exec app npm run migrate:postgres
 - `/` - landing page
 - `/rooms/:roomId` - realtime chat and debug/eval view
 - `/rooms/:roomId/report` - latest session report page
-- `/rooms/:roomId/shapes/:agentId` - latest Shape review page
+- `/rooms/:roomId/agents/:agentId` - latest agent review page
 - `/create` - room creation and recent-room dashboard
 
 Operational APIs:
@@ -186,7 +186,7 @@ Operational APIs:
 
 ```mermaid
 flowchart LR
-  Browser["Browser SPA\nlanding, create, chat, report, Shape review"] <--> WS["Node WebSocket + HTTP server"]
+  Browser["Browser SPA\nlanding, create, chat, report, agent review"] <--> WS["Node WebSocket + HTTP server"]
   WS --> Rooms["In-memory multi-room cache"]
   WS --> Core["Agent orchestration core"]
   Core --> Decisions["Speak / wait / stay-silent decisions"]
@@ -194,7 +194,7 @@ flowchart LR
   Router --> ModelPlan["Per-stage model routing evidence"]
   Core --> Stream["Streaming AI response simulation"]
   Core --> Feedback["Message + session feedback"]
-  Core --> Reports["Shape Performance Reports\npolicy diff + before/after comparison"]
+  Core --> Reports["Agent Performance Reports\npolicy diff + before/after comparison"]
   WS --> Queue["Report queue + worker"]
   Queue --> Reports
   WS --> Export["Transcript/report JSON export"]

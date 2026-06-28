@@ -132,12 +132,12 @@ document.querySelector("#reportPageButton").addEventListener("click", () => {
   window.location.href = `/rooms/${state.room.id}/report`;
 });
 
-document.querySelector("#shapePageButton").addEventListener("click", () => {
+document.querySelector("#agentPageButton").addEventListener("click", () => {
   if (!state.room) return;
   const latestReport = state.room.reports[state.room.reports.length - 1];
   const firstAgent = latestReport && latestReport.agents[0];
   const agentId = firstAgent ? firstAgent.agentId : state.room.selectedAgentIds[0];
-  window.location.href = `/rooms/${state.room.id}/shapes/${agentId}`;
+  window.location.href = `/rooms/${state.room.id}/agents/${agentId}`;
 });
 
 document.querySelector("#resetButton").addEventListener("click", () => {
@@ -584,8 +584,8 @@ function renderPrimaryPanel() {
     return;
   }
 
-  if (view.type === "shape") {
-    renderShapePage(view.agentId);
+  if (view.type === "agent") {
+    renderAgentPage(view.agentId);
     return;
   }
 
@@ -604,7 +604,7 @@ function renderLandingPage() {
           <span class="landing-eyebrow">Realtime multi-agent eval</span>
           <h2>SocialRL Arena</h2>
           <p>${escapeHtml(
-            "Evaluate whether AI agents should speak, how they affect group dynamics, and which Shape should be routed into the next conversation.",
+            "Evaluate whether AI agents should speak, how they affect group dynamics, and which agent should be routed into the next conversation.",
           )}</p>
           <div class="landing-actions">
             <a class="button-link primary" href="/create">Create Room</a>
@@ -637,7 +637,7 @@ function renderLandingPage() {
             </div>
           </div>
           <div class="landing-report-window">
-            <strong>Shape Report</strong>
+            <strong>Agent Report</strong>
             <div class="landing-score-grid">
               <span>Timing <b>4</b></span>
               <span>Restraint <b>5</b></span>
@@ -682,7 +682,7 @@ function renderCreatePage() {
           <strong>Create A Room</strong>
           <span class="status-pill">${escapeHtml(room.scenario.title)}</span>
         </div>
-        <p>Choose a scenario and agent set in Room Setup, then create a room. Reopen recent rooms below for live chat, reports, or Shape reviews.</p>
+        <p>Choose a scenario and agent set in Room Setup, then create a room. Reopen recent rooms below for live chat, reports, or agent reviews.</p>
         <div class="metric-grid">
           ${metric("Scenarios", room.scenarios.length)}
           ${metric("Agents", room.availableAgents.length)}
@@ -842,13 +842,13 @@ function renderSystemPerformance(performance = {}) {
   `;
 }
 
-function renderShapePage(agentId) {
+function renderAgentPage(agentId) {
   const room = state.room;
   const report = room && room.reports[room.reports.length - 1];
-  const shape = report && report.agents.find((agentReport) => agentReport.agentId === agentId);
+  const agent = report && report.agents.find((agentReport) => agentReport.agentId === agentId);
 
-  if (!shape) {
-    messagesEl.innerHTML = `<div class="empty-state">No Shape report found for this agent yet.</div>`;
+  if (!agent) {
+    messagesEl.innerHTML = `<div class="empty-state">No agent report found for this agent yet.</div>`;
     return;
   }
 
@@ -856,42 +856,42 @@ function renderShapePage(agentId) {
     <section class="full-report">
       <article class="report-card">
         <div class="report-title">
-          <strong>${escapeHtml(shape.agentName)}</strong>
-          <span class="status-pill">${escapeHtml(shape.role)}</span>
+          <strong>${escapeHtml(agent.agentName)}</strong>
+          <span class="status-pill">${escapeHtml(agent.role)}</span>
         </div>
         <p><strong>${escapeHtml(report.scenarioTitle)}</strong> · ${escapeHtml(report.policyMode)} · Run ${report.sessionNumber}</p>
-        <p>${escapeHtml(shape.summary)}</p>
+        <p>${escapeHtml(agent.summary)}</p>
         <p>
-          ${escapeHtml(shape.modelName || "model")} · ${escapeHtml(shape.promptVersion || "prompt")} · ${escapeHtml(shape.policyVersion || "policy")}
+          ${escapeHtml(agent.modelName || "model")} · ${escapeHtml(agent.promptVersion || "prompt")} · ${escapeHtml(agent.policyVersion || "policy")}
         </p>
         <div class="metric-grid">
-          ${Object.entries(shape.scorecard)
+          ${Object.entries(agent.scorecard)
             .map(([label, value]) => metric(formatTag(label), value))
             .join("")}
         </div>
       </article>
-      ${renderShapeStats(shape)}
-      ${renderDecisionReview(shape.decisionReview)}
-      ${renderFailureModeCard(shape)}
+      ${renderAgentStats(agent)}
+      ${renderDecisionReview(agent.decisionReview)}
+      ${renderFailureModeCard(agent)}
       <article class="report-card">
         <div class="report-title"><strong>Policy Diff</strong></div>
-        <p><strong>Before:</strong> ${escapeHtml(shape.policyDiff.before)}</p>
-        <p><strong>After:</strong> ${escapeHtml(shape.policyDiff.after)}</p>
-        <p>${escapeHtml(shape.policyDiff.rationale)}</p>
+        <p><strong>Before:</strong> ${escapeHtml(agent.policyDiff.before)}</p>
+        <p><strong>After:</strong> ${escapeHtml(agent.policyDiff.after)}</p>
+        <p>${escapeHtml(agent.policyDiff.rationale)}</p>
       </article>
       <article class="report-card">
         <div class="report-title"><strong>Routing Recommendation</strong></div>
-        <p>${escapeHtml(shape.routingRecommendation.reason)}</p>
+        <p>${escapeHtml(agent.routingRecommendation.reason)}</p>
         <div class="tag-list">
-          ${(shape.routingRecommendation.recommendedFor || []).map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join("")}
+          ${(agent.routingRecommendation.recommendedFor || []).map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join("")}
         </div>
-        <p><strong>Avoid:</strong> ${(shape.routingRecommendation.avoidFor || []).map(escapeHtml).join(", ") || "No avoid list yet."}</p>
-        <p><strong>Route next time:</strong> ${shape.routingRecommendation.routeNextTime ? "Yes" : "No"}</p>
-        ${renderRoutingFeedbackVotes(shape.routingRecommendation.sessionFeedback)}
-        ${renderRoutingScores(shape.routingScores)}
+        <p><strong>Avoid:</strong> ${(agent.routingRecommendation.avoidFor || []).map(escapeHtml).join(", ") || "No avoid list yet."}</p>
+        <p><strong>Route next time:</strong> ${agent.routingRecommendation.routeNextTime ? "Yes" : "No"}</p>
+        ${renderRoutingFeedbackVotes(agent.routingRecommendation.sessionFeedback)}
+        ${renderRoutingScores(agent.routingScores)}
       </article>
-      ${renderMessageExamples("Best Messages", shape.bestMessages)}
-      ${renderMessageExamples("Worst Messages", shape.worstMessages)}
+      ${renderMessageExamples("Best Messages", agent.bestMessages)}
+      ${renderMessageExamples("Worst Messages", agent.worstMessages)}
     </section>
   `;
 }
@@ -1159,15 +1159,15 @@ function renderParticipants() {
     detail: "Connected now",
     className: "human",
   }));
-  const shapes = room.agents.map((agent) => ({
+  const aiAgents = room.agents.map((agent) => ({
     id: agent.id,
     name: agent.name,
-    type: "AI Shape",
+    type: "AI agent",
     detail: agent.role,
     className: agent.id,
   }));
 
-  participantsEl.innerHTML = [...humans, ...shapes]
+  participantsEl.innerHTML = [...humans, ...aiAgents]
     .map(
       (participant) => `
         <div class="participant ${escapeHtml(participant.className)}">
@@ -1433,7 +1433,7 @@ function renderExpandedAgentReport(agentReport) {
     <article class="report-card">
       <div class="report-title">
         <strong>${escapeHtml(agentReport.agentName)} Details</strong>
-        <a href="/rooms/${state.room.id}/shapes/${agentReport.agentId}">Shape review</a>
+        <a href="/rooms/${state.room.id}/agents/${agentReport.agentId}">Agent review</a>
       </div>
       <p><strong>Failure modes:</strong> ${agentReport.failureModes.map(escapeHtml).join(", ")}</p>
       <p><strong>Policy rationale:</strong> ${escapeHtml(agentReport.policyDiff.rationale)}</p>
@@ -1573,7 +1573,7 @@ function renderDecisionReviewEntry(entry) {
   `;
 }
 
-function renderShapeStats(agentReport) {
+function renderAgentStats(agentReport) {
   const stats = agentReport.stats;
   return `
     <article class="report-card">
@@ -1862,7 +1862,7 @@ function syncUrl(roomId) {
   const isRoomSubpage =
     pathParts[0] === "rooms" &&
     pathParts[1] === roomId &&
-    (pathParts[2] === "report" || pathParts[2] === "shapes");
+    (pathParts[2] === "report" || pathParts[2] === "agents");
   if (!isRoomSubpage && window.location.pathname !== nextPath) {
     window.history.replaceState(null, "", nextPath);
   }
@@ -1879,8 +1879,8 @@ function getViewMode() {
   if (parts[0] === "rooms" && parts[2] === "report") {
     return { type: "report" };
   }
-  if (parts[0] === "rooms" && parts[2] === "shapes") {
-    return { type: "shape", agentId: parts[3] };
+  if (parts[0] === "rooms" && parts[2] === "agents") {
+    return { type: "agent", agentId: parts[3] };
   }
   return { type: "chat" };
 }

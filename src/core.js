@@ -905,7 +905,7 @@ function buildModelRoutingPlan(room, signals, winner) {
       "router",
       "fast",
       "local-fast-router-v1",
-      "Single-turn routing chooses at most one Shape with low latency.",
+      "Single-turn routing chooses at most one agent with low latency.",
     ),
     message: modelRouteStage(
       "message",
@@ -925,7 +925,7 @@ function buildModelRoutingPlan(room, signals, winner) {
       "report",
       "strong",
       "local-strong-report-judge-v1",
-      "Final Shape reports need stronger judgment over transcript, feedback, and routing evidence.",
+      "Final agent reports need stronger judgment over transcript, feedback, and routing evidence.",
     ),
     policy: modelRouteStage(
       "policy",
@@ -1530,7 +1530,7 @@ function generateImprovedPolicy(agent, stats, tagCounts, room) {
     clauses.push("Preserve concise decision-forcing questions when the room is choosing between options.");
   }
   if (room.sessionFeedback.some((entry) => entry.routeNextAgentId === agent.id)) {
-    clauses.push("Prefer this Shape for similar rooms when its last intervention received positive routing feedback.");
+    clauses.push("Prefer this agent for similar rooms when its last intervention received positive routing feedback.");
   }
 
   return [...new Set(clauses)].join(" ");
@@ -2112,7 +2112,7 @@ function buildRoutingRecommendation(agent, scorecard, room) {
 function buildRoutingRecommendationReason(baseReason, feedbackVotes) {
   const notes = [];
   if (feedbackVotes.routeNextVotes > 0) {
-    notes.push(`${feedbackVotes.routeNextVotes} session feedback vote(s) explicitly routed this Shape into similar rooms.`);
+    notes.push(`${feedbackVotes.routeNextVotes} session feedback vote(s) explicitly routed this agent into similar rooms.`);
   }
   if (feedbackVotes.mostUsefulVotes > 0) {
     notes.push(`${feedbackVotes.mostUsefulVotes} user(s) marked it most useful.`);

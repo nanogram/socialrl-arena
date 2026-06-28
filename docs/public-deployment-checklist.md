@@ -60,6 +60,6 @@ Add these to the final handoff:
 
 - Live demo: `https://<host>/rooms/<room-id>`
 - Report: `https://<host>/rooms/<room-id>/report`
-- Shape Review: `https://<host>/rooms/<room-id>/shapes/mediator_v1`
+- Agent Review: `https://<host>/rooms/<room-id>/agents/mediator_v1`
 - GitHub repo: `<github-repo-url>`
 - Demo video: `<demo-video-url>`

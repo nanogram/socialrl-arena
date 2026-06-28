@@ -57,6 +57,6 @@ After pushing to GitHub, the `.github/workflows/ci.yml` workflow runs preflight,
 1. Open the seeded chat URL.
 2. Show the chat and debug/eval panel.
 3. Open the report URL.
-4. Open the Mediator Shape Review URL.
+4. Open the Mediator Agent Review URL.
 5. Export JSON.
 6. Mention the target load result in `docs/performance-report.md`.

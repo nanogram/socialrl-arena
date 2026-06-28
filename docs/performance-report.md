@@ -9,7 +9,7 @@ The spec asks the demo to simulate:
 - 300 AI agents
 - 1,000 messages over a short window
 
-The local target run used deterministic local agents and in-memory storage to isolate WebSocket fanout, orchestration, routing, report generation, and feedback/report event flow from disk persistence overhead. Shape reports also include active-room and rooms-tracked context captured from the server worker at report-generation time.
+The local target run used deterministic local agents and in-memory storage to isolate WebSocket fanout, orchestration, routing, report generation, and feedback/report event flow from disk persistence overhead. Agent reports also include active-room and rooms-tracked context captured from the server worker at report-generation time.
 
 Command:
 

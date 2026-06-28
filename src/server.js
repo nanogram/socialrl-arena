@@ -532,20 +532,20 @@ function handleRoomApi(requestUrl, res) {
     return;
   }
 
-  if (parts[3] === "shapes" && parts[4]) {
+  if (parts[3] === "agents" && parts[4]) {
     const latestReport = room.reports[room.reports.length - 1] || null;
-    const shape = latestReport
+    const agentReport = latestReport
       ? latestReport.agents.find((agentReport) => agentReport.agentId === parts[4])
       : null;
-    if (!shape) {
-      sendJson(res, 404, { error: "Shape report not found" });
+    if (!agentReport) {
+      sendJson(res, 404, { error: "Agent report not found" });
       return;
     }
     sendJson(res, 200, {
       roomId: room.id,
       reportId: latestReport.id,
       scenario: room.scenario,
-      shape,
+      agentReport,
     });
     return;
   }

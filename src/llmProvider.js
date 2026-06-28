@@ -193,7 +193,7 @@ class HttpLlmProvider {
       const response = await postJson(
         this.reportUrl,
         {
-          task: "judge_shape_report",
+          task: "judge_agent_report",
           prompt,
           room: compactRoom(room),
           draftReport,
@@ -342,7 +342,7 @@ class OpenAIResponsesProvider {
       const model = this.modelFor("report");
       const response = await this.callResponses({
         prompt,
-        schemaName: "shape_report_judge",
+        schemaName: "agent_report_judge",
         schema: REPORT_JUDGE_SCHEMA,
         maxOutputTokens: 2200,
         model,
