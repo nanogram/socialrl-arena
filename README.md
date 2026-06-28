@@ -101,6 +101,7 @@ docker compose exec app npm run migrate:postgres
 - Invite links
 - Scenario selection
 - Nine scenarios covering planning, drama/conflict, casual hangout, fandom/RP, study/work, advice, game night, debate, and support/emotional rooms
+- Weekend Trip Planning demo covers budget, nightlife, nature, and a derailing fourth friend
 - Three agents: Mediator, Vibe Friend, and Observer
 - Room setup enforces 2-3 selected AI Shapes per session
 - WebSocket fanout

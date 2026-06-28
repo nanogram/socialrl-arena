@@ -119,6 +119,7 @@ function latestDemoArtifactChecks() {
     ...checks,
     freshArtifactCheck(exportPath, links[0].stat),
     demoContentCheck(exported),
+    demoScenarioFidelityCheck(exported),
     demoReportCheck(exported),
     demoExportCheck(exported),
   ];
@@ -171,6 +172,35 @@ function demoContentCheck(exported) {
     detail: ok
       ? `${room.reports.length} reports, ${latestReport.comparison.length} comparison rows`
       : "demo export must include all routing room types, improved run, comparison rows, routed decisions, and route metadata",
+  };
+}
+
+function demoScenarioFidelityCheck(exported) {
+  const room = exported.room || {};
+  const transcript = Array.isArray(exported.transcript) ? exported.transcript : [];
+  const runTranscripts = Array.isArray(exported.runs)
+    ? exported.runs.flatMap((run) => (Array.isArray(run.transcript) ? run.transcript : []))
+    : [];
+  const allHumanMessages = [...transcript, ...runTranscripts].filter(
+    (message) => message.senderType === "human",
+  );
+  const speakerNames = new Set(allHumanMessages.map((message) => message.senderName).filter(Boolean));
+  const combinedText = allHumanMessages.map((message) => message.content || "").join(" ").toLowerCase();
+  const ok =
+    room.scenario &&
+    room.scenario.id === "weekend_trip" &&
+    speakerNames.size >= 4 &&
+    /cheap|budget|cost/.test(combinedText) &&
+    /nightlife/.test(combinedText) &&
+    /nature|lake|trail|cabin/.test(combinedText) &&
+    /pizza|side quest|off topic/.test(combinedText);
+
+  return {
+    name: "demo:scenario-fidelity",
+    status: ok ? "pass" : "fail",
+    detail: ok
+      ? `${speakerNames.size} human speakers cover budget, nightlife, nature, and a derailing beat`
+      : "weekend-trip demo must include four human speakers plus budget, nightlife, nature, and derailing side-chatter evidence",
   };
 }
 

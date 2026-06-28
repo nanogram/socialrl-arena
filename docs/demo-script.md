@@ -12,7 +12,7 @@
 
 SocialRL Arena is a realtime eval harness for multiplayer AI. The key question is not only what an agent says, but whether it should speak at all.
 
-In this room, humans are planning a weekend trip. Each AI agent first makes a speak, wait, or stay-silent decision. The router then picks at most one agent for the turn.
+In this room, four humans are planning a weekend trip: Alex is budget-sensitive, Jules wants nightlife, Sam wants nature, and Taylor derails with side chatter. Each AI agent first makes a speak, wait, or stay-silent decision. The router then picks at most one agent for the turn.
 
 Normal chat mode keeps the group-chat experience focused while still showing active participants, invite, end-session, report actions, and the end-of-session feedback prompt. Humans can reply to a specific message, and AI responses preserve the trigger-message link so reviewers can see who or what the Shape responded to. Submitting feedback after the first report refreshes the latest Shape Report. The debug panel shows the participation decisions, confidence, group state, target user, routing reason, selected Shape, blocked Shapes, candidate scores, rule adjustments, live latency, report queue, feedback counts, active policy, and model-step telemetry. The chat view lets humans tag AI messages with group-chat-native feedback like good timing, helped decide, interrupted, responded to the wrong person, or should have stayed quiet.
 

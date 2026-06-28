@@ -11,7 +11,8 @@ const scenarios = [
       ["Alex", "I need this to stay cheap, but I still want it to feel like a real weekend."],
       ["Jules", "I mostly care about nightlife. If everything closes at 8, I am out."],
       ["Sam", "I want nature too. A lake or trails would make it worth the drive."],
-      ["Taylor", "What if we stop debating and vote between cheap city, cabin, or lake town?"],
+      ["Taylor", "Unrelated but what if this becomes a pizza-themed side quest instead?"],
+      ["Alex", "Can we park the pizza tangent and vote between cheap city, cabin, or lake town?"],
     ],
   },
   {

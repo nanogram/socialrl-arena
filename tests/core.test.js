@@ -61,6 +61,13 @@ function makeDecision(room, triggerMessage, agentId, input = {}) {
 const room = createRoom("test-room");
 assert.equal(getRoomAgents(room).length, 3, "default room should include three spec agents");
 assert.deepEqual(agentSelectionRules, { min: 2, max: 3 });
+const weekendTrip = scenarios.find((scenario) => scenario.id === "weekend_trip");
+assert.ok(weekendTrip, "weekend trip MVP scenario should exist");
+assert.ok(new Set(weekendTrip.sampleScript.map(([speaker]) => speaker)).size >= 4);
+assert.ok(
+  weekendTrip.sampleScript.some(([, content]) => /pizza|side quest|off topic/i.test(content)),
+  "weekend trip scenario should include the derailing fourth-friend beat from the spec",
+);
 for (const roomType of [
   "planning",
   "drama_conflict",
