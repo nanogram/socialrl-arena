@@ -488,7 +488,8 @@ function renderSetup() {
   const room = state.room;
   if (!room) return;
 
-  const setupKey = `${room.id}:${room.scenario.id}:${room.selectedAgentIds.join(",")}:${room.availableAgents.length}`;
+  const rules = getAgentSelectionRules();
+  const setupKey = `${room.id}:${room.scenario.id}:${room.selectedAgentIds.join(",")}:${room.availableAgents.length}:${rules.min}:${rules.max}`;
   if (setupKey === state.setupKey) {
     inviteLinkInput.value = `${window.location.origin}/rooms/${room.id}`;
     renderSpeakerSelect(room);
@@ -520,6 +521,10 @@ function renderSetup() {
       `;
     })
     .join("");
+  syncAgentToggleConstraints();
+  agentTogglesEl.querySelectorAll("input[type='checkbox']").forEach((input) => {
+    input.addEventListener("change", () => syncAgentToggleConstraints(input));
+  });
 
   renderAgentSelect(mostUsefulAgent, room.agents);
   renderAgentSelect(mostAnnoyingAgent, room.agents);
@@ -1310,7 +1315,56 @@ function comparisonColumn(title, values) {
 }
 
 function getSelectedAgentIds() {
-  return [...agentTogglesEl.querySelectorAll("input[type='checkbox']:checked")].map((input) => input.value);
+  const inputs = [...agentTogglesEl.querySelectorAll("input[type='checkbox']")];
+  const available = inputs.map((input) => input.value);
+  const selected = inputs.filter((input) => input.checked).map((input) => input.value);
+  return normalizeSelectedAgentIds(selected, available, getAgentSelectionRules());
+}
+
+function getAgentSelectionRules() {
+  return state.room && state.room.agentSelectionRules ? state.room.agentSelectionRules : { min: 2, max: 3 };
+}
+
+function syncAgentToggleConstraints(changedInput) {
+  const inputs = [...agentTogglesEl.querySelectorAll("input[type='checkbox']")];
+  if (!inputs.length) return;
+
+  const rules = getAgentSelectionRules();
+  let checked = inputs.filter((input) => input.checked);
+
+  if (checked.length > rules.max) {
+    for (const input of checked) {
+      if (checked.length <= rules.max) break;
+      if (input === changedInput) continue;
+      input.checked = false;
+      checked = inputs.filter((candidate) => candidate.checked);
+    }
+  }
+
+  if (checked.length < rules.min && changedInput && !changedInput.checked) {
+    changedInput.checked = true;
+    checked = inputs.filter((input) => input.checked);
+  }
+
+  for (const input of inputs) {
+    if (checked.length >= rules.min) break;
+    if (!input.checked) {
+      input.checked = true;
+      checked.push(input);
+    }
+  }
+}
+
+function normalizeSelectedAgentIds(selected, available, rules) {
+  const unique = [...new Set(selected.filter((agentId) => available.includes(agentId)))];
+  const normalized = unique.length ? unique : available.slice();
+
+  for (const agentId of available) {
+    if (normalized.length >= rules.min) break;
+    if (!normalized.includes(agentId)) normalized.push(agentId);
+  }
+
+  return normalized.slice(0, rules.max);
 }
 
 function saveDisplayName() {

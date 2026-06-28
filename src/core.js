@@ -43,6 +43,10 @@ const scenarios = [
 ];
 
 const defaultScenarioId = "weekend_trip";
+const agentSelectionRules = {
+  min: 2,
+  max: 3,
+};
 
 const feedbackDefinitions = {
   helpful: {
@@ -1517,8 +1521,15 @@ function getScenario(scenarioId) {
 
 function normalizeAgentIds(agentIds) {
   const requested = Array.isArray(agentIds) && agentIds.length ? agentIds : agents.map((agent) => agent.id);
-  const valid = requested.filter((agentId) => agents.some((agent) => agent.id === agentId));
-  return valid.length ? [...new Set(valid)] : agents.map((agent) => agent.id);
+  const valid = [...new Set(requested.filter((agentId) => agents.some((agent) => agent.id === agentId)))];
+  const selected = valid.length ? valid : agents.map((agent) => agent.id);
+
+  for (const agent of agents) {
+    if (selected.length >= agentSelectionRules.min) break;
+    if (!selected.includes(agent.id)) selected.push(agent.id);
+  }
+
+  return selected.slice(0, agentSelectionRules.max);
 }
 
 function normalizeOptionalAgentId(agentId) {
@@ -1624,6 +1635,7 @@ function serializeRoom(room) {
     agents: getRoomAgents(room),
     availableAgents: agents,
     selectedAgentIds: room.selectedAgentIds,
+    agentSelectionRules,
     feedbackDefinitions,
     messages: room.messages,
     decisions: room.decisions,
@@ -1640,6 +1652,7 @@ function serializeRoom(room) {
 
 module.exports = {
   agents,
+  agentSelectionRules,
   feedbackDefinitions,
   scenario: getScenario(defaultScenarioId),
   scenarios,

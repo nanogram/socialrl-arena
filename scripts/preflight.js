@@ -76,9 +76,9 @@ function checkSpecMarkers() {
 
   for (const [file, body, markers] of [
     ["public/index.html", html, ["debugToggleButton", "displayNameInput", "normalChatBar", "normalSessionFeedback", "participants", "policies", "routingDecisions"]],
-    ["public/app.js", app, ["AI Shape", "basePersonality", "candidateScores", "comparisonColumn", "copyInviteLink", "normalAgentOptions", "renderExampleContext", "renderFailureModeCard", "renderNormalChatBar", "renderNormalSessionFeedback", "renderParticipants", "renderPolicies", "renderRuleAdjustments", "renderRoutingDecisions", "renderShapeStats", "renderThinkingState", "socialrl_debug_panel", "socialrl_display_name"]],
+    ["public/app.js", app, ["AI Shape", "agentSelectionRules", "basePersonality", "candidateScores", "comparisonColumn", "copyInviteLink", "normalAgentOptions", "renderExampleContext", "renderFailureModeCard", "renderNormalChatBar", "renderNormalSessionFeedback", "renderParticipants", "renderPolicies", "renderRuleAdjustments", "renderRoutingDecisions", "renderShapeStats", "renderThinkingState", "socialrl_debug_panel", "socialrl_display_name"]],
     ["src/server.js", server, ["addMessageAliases", "agent_stayed_silent", "eventValue", "message_stream_delta", "report_url", "resolveEventRoom", "sender_name", "session_feedback_refresh"]],
-    ["src/core.js", core, ["activePolicyOverrides", "applyRoutingPolicy", "generateImprovedPolicy", "pickRoutedWinner", "refreshLatestReport", "routingScores", "p99FullResponseLatencyMs", "routeNextAgentCounts"]],
+    ["src/core.js", core, ["activePolicyOverrides", "agentSelectionRules", "applyRoutingPolicy", "generateImprovedPolicy", "pickRoutedWinner", "refreshLatestReport", "routingScores", "p99FullResponseLatencyMs", "routeNextAgentCounts"]],
     ["src/storage.js", storage, ["firstTokenLatencyMs", "first_token_latency_ms", "insertRoutingDecisions", "insertReportJobs", "routing_decisions", "report_jobs"]],
     ["db/schema.sql", schema, ["create table if not exists routing_decisions", "create table if not exists report_jobs", "first_token_latency_ms"]],
     ["render.yaml", render, ["healthCheckPath: /api/health", "fromDatabase:", "socialrl-arena-db"]],

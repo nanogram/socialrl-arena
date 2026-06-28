@@ -99,6 +99,7 @@ docker compose exec app npm run migrate:postgres
 - Scenario selection
 - Weekend Trip Planning, Group Project Triage, and Friend Group Conflict scenarios
 - Three agents: Mediator, Vibe Friend, and Observer
+- Room setup enforces 2-3 selected AI Shapes per session
 - WebSocket fanout
 - Agent speak/wait/stay-silent decisions
 - Explicit stayed-silent WebSocket events for debug/eval views

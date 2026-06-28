@@ -3,6 +3,7 @@ const {
   addFeedback,
   addHumanMessage,
   addSessionFeedback,
+  agentSelectionRules,
   buildReport,
   createAgentPlaceholder,
   createExport,
@@ -57,6 +58,18 @@ function makeDecision(room, triggerMessage, agentId, input = {}) {
 
 const room = createRoom("test-room");
 assert.equal(getRoomAgents(room).length, 3, "default room should include three spec agents");
+assert.deepEqual(agentSelectionRules, { min: 2, max: 3 });
+
+const singleAgentRoom = createRoom("single-agent-request", {
+  agentIds: ["observer_v1"],
+});
+assert.equal(singleAgentRoom.selectedAgentIds.length, 2, "rooms should enforce the two-Shape minimum");
+assert.ok(singleAgentRoom.selectedAgentIds.includes("observer_v1"));
+
+const tooManyAgentsRoom = createRoom("too-many-agent-request", {
+  agentIds: ["observer_v1", "mediator_v1", "vibe_friend_v1", "unknown_agent"],
+});
+assert.equal(tooManyAgentsRoom.selectedAgentIds.length, 3, "rooms should cap selected Shapes at three");
 
 const baselineTurns = [
   runAgentTurn(room, "Alex", "I need this to stay cheap."),
@@ -189,6 +202,8 @@ setRoomConfig(room, {
   scenarioId: "friend_conflict",
   agentIds: ["observer_v1"],
 });
+assert.equal(room.selectedAgentIds.length, 2, "configuration should also enforce the two-Shape minimum");
+assert.ok(room.selectedAgentIds.includes("observer_v1"));
 room.messages = [];
 room.decisions = [];
 room.feedback = [];
