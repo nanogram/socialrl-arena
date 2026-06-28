@@ -76,6 +76,8 @@ function checkSpecMarkers() {
   const storage = fs.readFileSync("src/storage.js", "utf8");
   const schema = fs.readFileSync("db/schema.sql", "utf8");
   const render = fs.readFileSync("render.yaml", "utf8");
+  const dockerfile = fs.readFileSync("Dockerfile", "utf8");
+  const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
   const provider = fs.readFileSync("src/llmProvider.js", "utf8");
   const env = fs.readFileSync(".env.example", "utf8");
   const readme = fs.readFileSync("README.md", "utf8");
@@ -92,7 +94,9 @@ function checkSpecMarkers() {
     ["src/core.js", core, ["activePolicyOverrides", "advice_spiral", "agentSelectionRules", "applyRoutingPolicy", "archiveCurrentRun", "buildDecisionReview", "buildEvidenceManifest", "buildModelRoutingPlan", "buildModelRoutingSummary", "buildRoutingRecommendationReason", "casual_hangout", "chaotic", "debate_prep", "decisionReview", "detectQuietParticipant", "emotionallySensitive", "evidenceManifest", "exportRunSnapshot", "first_token_latency_ms", "fandom_rp", "game_night", "generateImprovedPolicy", "humanConversationDelta", "humanConversationLift", "humanMomentumDirection", "latency_ms", "Message feedback can only be added to AI messages", "modelRoutingSummary", "normalizeReplyToMessageId", "pickRoutedWinner", "pizza-themed side quest", "refreshLatestReport", "replyTargetRate", "replyToMessageId", "routingScores", "runHistory", "senderId", "roomsTracked", "stalled", "support_checkin", "targetedDecisionRate", "targetUserForDecision", "targetUserCounts", "token_count", "p99FirstTokenLatencyMs", "p99FullResponseLatencyMs", "llmErrorRate", "routeNextAgentCounts"]],
     ["src/storage.js", storage, ["decision_review", "evidence_manifest", "model_routing", "model_routing_summary", "firstTokenLatencyMs", "first_token_latency_ms", "insertRoutingDecisions", "insertReportJobs", "routing_decisions", "report_jobs"]],
     ["db/schema.sql", schema, ["create table if not exists routing_decisions", "create table if not exists report_jobs", "decision_review", "evidence_manifest", "model_routing", "model_routing_summary", "first_token_latency_ms"]],
+    ["Dockerfile", dockerfile, ["node:22-alpine"]],
     ["render.yaml", render, ["healthCheckPath: /api/health", "fromDatabase:", "socialrl-arena-db"]],
+    [".github/workflows/ci.yml", ci, ["npm run demo:seed", "npm run load-test:target-artifact", "npm run final-audit:local"]],
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "recordProviderFailure", "routerModelName"]],
     ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["buildReportEvalInputs", "fullTranscript", "messageLatency", "evidenceManifest", "emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],

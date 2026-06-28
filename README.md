@@ -159,7 +159,7 @@ docker compose exec app npm run migrate:postgres
 - Performance report: `docs/performance-report.md`
 - Final deliverable checklist: `docs/final-deliverable.md`
 - Public deployment checklist: `docs/public-deployment-checklist.md`
-- GitHub Actions CI workflow for preflight and smoke load verification
+- GitHub Actions CI workflow for preflight, smoke load, seeded demo artifact, target-load artifact, and local final-audit verification
 
 ## Routes
 
@@ -200,7 +200,7 @@ flowchart LR
 
 ## Final Submission Status
 
-Local implementation is complete against the saved spec and is checked by:
+Local implementation is complete against the saved spec and is checked locally and in CI by:
 
 ```bash
 npm run preflight

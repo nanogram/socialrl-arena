@@ -9,7 +9,7 @@ git remote add origin <github-repo-url>
 git push -u origin main
 ```
 
-Confirm the CI workflow passes on GitHub Actions.
+Confirm the CI workflow passes on GitHub Actions. It runs preflight, smoke load, demo seeding, target-load artifact generation, and the local final audit.
 
 ## Hosted App
 

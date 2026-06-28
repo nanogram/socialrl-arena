@@ -7,7 +7,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -39,3 +39,12 @@ jobs:
 
       - name: Run smoke load test
         run: npm run load-test:smoke
+
+      - name: Seed before-after demo artifact
+        run: npm run demo:seed
+
+      - name: Generate target load artifact
+        run: npm run load-test:target-artifact
+
+      - name: Run local final audit
+        run: npm run final-audit:local

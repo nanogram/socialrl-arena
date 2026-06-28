@@ -50,7 +50,7 @@ LOOM_URL=https://www.loom.com/share/<video-id> \
 npm run final-audit
 ```
 
-After pushing to GitHub, the `.github/workflows/ci.yml` workflow should run the same preflight and smoke-load gates against a memory-backed server.
+After pushing to GitHub, the `.github/workflows/ci.yml` workflow runs preflight, smoke load, demo seeding, target-load artifact generation, and `npm run final-audit:local` against memory-backed servers.
 
 ## Reviewer Flow
 
