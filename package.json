@@ -1,0 +1,22 @@
+{
+  "name": "socialrl-arena",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Realtime group-chat eval demo for measuring, reviewing, and improving AI participation quality.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:memory": "SOCIALRL_STORAGE=memory node src/server.js",
+    "test": "node tests/core.test.js && node tests/storage.test.js && node tests/provider.test.js",
+    "migrate:postgres": "node scripts/migrate-postgres.js",
+    "load-test": "node scripts/load-test.js",
+    "load-test:smoke": "LOAD_TEST_ROOMS=3 LOAD_TEST_USERS_PER_ROOM=2 LOAD_TEST_MESSAGES_PER_ROOM=3 node scripts/load-test.js",
+    "load-test:target": "LOAD_TEST_ROOMS=100 LOAD_TEST_USERS_PER_ROOM=3 LOAD_TEST_MESSAGES_PER_ROOM=10 node scripts/load-test.js",
+    "demo:seed": "node scripts/demo-seed.js",
+    "preflight": "node scripts/preflight.js"
+  },
+  "dependencies": {
+    "pg": "^8.22.0",
+    "ws": "^8.18.0"
+  }
+}

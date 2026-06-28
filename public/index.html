@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SocialRL Arena</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>SocialRL Arena</h1>
+          <p id="scenario">Weekend Trip Planning</p>
+        </div>
+        <div class="status-strip">
+          <span id="connectionStatus" class="status-pill">Connecting</span>
+          <span id="roomStatus" class="status-pill">demo-room</span>
+          <span id="policyMode" class="status-pill">Baseline</span>
+          <span id="sessionNumber" class="status-pill">Run 1</span>
+          <button id="debugToggleButton" type="button" class="quiet compact-button">Debug View</button>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <section class="chat-panel" aria-label="Group chat">
+          <div id="messages" class="messages"></div>
+
+          <form id="messageForm" class="composer">
+            <select id="speakerSelect" aria-label="Speaker">
+              <option>Alex</option>
+              <option>Jules</option>
+              <option>Sam</option>
+              <option>Taylor</option>
+              <option>Mina</option>
+              <option>Dev</option>
+              <option>Noor</option>
+              <option>Rae</option>
+              <option>Cam</option>
+              <option>Lee</option>
+            </select>
+            <input
+              id="messageInput"
+              autocomplete="off"
+              placeholder="Send a group message"
+              maxlength="280"
+            />
+            <button type="submit">Send</button>
+          </form>
+        </section>
+
+        <aside class="side-panel" aria-label="Evaluation panel">
+          <section class="panel-section setup-panel">
+            <h2>Room Setup</h2>
+            <div class="setup-grid">
+              <label>
+                <span>Display name</span>
+                <input id="displayNameInput" maxlength="28" placeholder="Your name" />
+              </label>
+              <label>
+                <span>Scenario</span>
+                <select id="scenarioSelect"></select>
+              </label>
+              <label>
+                <span>Room name</span>
+                <input id="roomNameInput" maxlength="40" placeholder="demo-room" />
+              </label>
+            </div>
+            <div id="agentToggles" class="agent-toggles"></div>
+            <div class="toolbar compact">
+              <button id="createRoomButton" type="button">Create Room</button>
+              <button id="joinRoomButton" type="button" class="quiet">Join / Name</button>
+              <button id="configureRoomButton" type="button" class="quiet">Update Room</button>
+            </div>
+            <label class="invite-link">
+              <span>Invite link</span>
+              <input id="inviteLink" readonly />
+            </label>
+          </section>
+
+          <div class="toolbar">
+            <button id="sampleButton" type="button">Run Sample</button>
+            <button id="endButton" type="button">End + Report</button>
+            <button id="improveButton" type="button">Apply Improved</button>
+            <button id="exportButton" type="button">Export JSON</button>
+            <button id="chatPageButton" type="button" class="quiet">Chat View</button>
+            <button id="reportPageButton" type="button" class="quiet">Report Page</button>
+            <button id="shapePageButton" type="button" class="quiet">Shape Review</button>
+            <button id="resetButton" type="button" class="quiet">Reset Room</button>
+          </div>
+
+          <section class="panel-section">
+            <h2>Participants</h2>
+            <div id="participants" class="participant-list"></div>
+          </section>
+
+          <section class="panel-section">
+            <h2>Active Policies</h2>
+            <div id="policies" class="policy-list"></div>
+          </section>
+
+          <section class="panel-section">
+            <h2>Session Feedback</h2>
+            <form id="sessionFeedbackForm" class="session-feedback">
+              <div class="setup-grid">
+                <label>
+                  <span>Most useful</span>
+                  <select id="mostUsefulAgent"></select>
+                </label>
+                <label>
+                  <span>Most annoying</span>
+                  <select id="mostAnnoyingAgent"></select>
+                </label>
+                <label>
+                  <span>Route next</span>
+                  <select id="routeNextAgent"></select>
+                </label>
+              </div>
+              <div class="check-row">
+                <label><input id="didReachDecision" type="checkbox" /> Reached decision</label>
+                <label><input id="wouldInviteAgain" type="checkbox" /> Would invite again</label>
+              </div>
+              <label>
+                <span>Humans talked</span>
+                <select id="humansTalked">
+                  <option value="more">More</option>
+                  <option value="same" selected>Same</option>
+                  <option value="less">Less</option>
+                  <option value="unsure">Unsure</option>
+                </select>
+              </label>
+              <textarea id="sessionNotes" rows="2" placeholder="Notes for the report"></textarea>
+              <button type="submit">Submit Feedback</button>
+            </form>
+          </section>
+
+          <section class="panel-section">
+            <h2>Agent Decisions</h2>
+            <div id="decisions" class="decision-list"></div>
+          </section>
+
+          <section class="panel-section">
+            <h2>Routing Decisions</h2>
+            <div id="routingDecisions" class="decision-list"></div>
+          </section>
+
+          <section class="panel-section">
+            <h2>Room Metrics</h2>
+            <div id="roomMetrics" class="report"></div>
+          </section>
+
+          <section class="panel-section report-section">
+            <h2>Shape Report</h2>
+            <div id="report" class="report"></div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

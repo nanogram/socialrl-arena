@@ -1,0 +1,32 @@
+# 90-Second Demo Script
+
+## Setup
+
+1. Open `/rooms/demo-room`.
+2. Select `Weekend Trip Planning`.
+3. Keep all three agents enabled.
+4. Click `Run Sample`.
+
+## Narration
+
+SocialRL Arena is a realtime eval harness for multiplayer AI. The key question is not only what an agent says, but whether it should speak at all.
+
+In this room, humans are planning a weekend trip. Each AI agent first makes a speak, wait, or stay-silent decision. The router then picks at most one agent for the turn.
+
+The debug panel shows the participation decisions, confidence, group state, routing reason, selected Shape, blocked Shapes, and candidate scores. The chat view lets humans tag AI messages with group-chat-native feedback like good timing, helped decide, interrupted, or should have stayed quiet.
+
+When the session ends, the Shape Report scores each agent on timing, restraint, decision impact, social awareness, fun, and human-likeness. It also shows failure modes, best and worst messages, policy diffs, routing recommendations, and session-level feedback.
+
+Now apply the improved policy and rerun the same scenario. The comparison shows whether the system reduced over-participation and improved decision usefulness.
+
+The result is a working loop: live group chat, AI participation decisions, human feedback, performance reports, policy improvement, and routing recommendations.
+
+## Capture Checklist
+
+- Show normal chat view.
+- Show agent decision stream.
+- Show router candidate scores and selected Shape.
+- Add at least two feedback tags.
+- End session and show Shape Report.
+- Click `Apply Improved`, run sample again, and show before/after comparison.
+- Export JSON to show transcript/report portability.
