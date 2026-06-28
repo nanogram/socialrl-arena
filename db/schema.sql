@@ -43,6 +43,7 @@ create table if not exists messages (
   reply_to_message_id text,
   decision_id text,
   latency_ms integer,
+  first_token_latency_ms integer,
   token_count integer,
   model_name text,
   prompt_version text,
@@ -169,3 +170,4 @@ create index if not exists idx_agent_reports_room on agent_reports(room_id, sess
 
 alter table session_feedback add column if not exists route_next_agent_id text;
 alter table agent_reports add column if not exists routing_scores jsonb not null default '{}';
+alter table messages add column if not exists first_token_latency_ms integer;

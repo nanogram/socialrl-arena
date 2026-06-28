@@ -297,10 +297,10 @@ async function insertMessages(client, messages) {
       `
         insert into messages (
           id, room_id, sender_id, sender_name, sender_type, agent_id, content,
-          created_at, reply_to_message_id, decision_id, latency_ms, token_count,
+          created_at, reply_to_message_id, decision_id, latency_ms, first_token_latency_ms, token_count,
           model_name, prompt_version, policy_version
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       `,
       [
         message.id,
@@ -314,6 +314,7 @@ async function insertMessages(client, messages) {
         message.replyToMessageId,
         message.decisionId,
         message.latencyMs,
+        message.firstTokenLatencyMs,
         message.tokenCount,
         message.modelName,
         message.promptVersion,

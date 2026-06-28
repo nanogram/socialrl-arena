@@ -6,7 +6,9 @@ const {
   addHumanMessage,
   addSessionFeedback,
   createAgentDecisions,
+  createAgentPlaceholder,
   createRoom,
+  finalizeAgentMessage,
   routeAgentDecisions,
 } = require("../src/core");
 const { FileStorage, MemoryStorage, _internals } = require("../src/storage");
@@ -21,7 +23,11 @@ async function main() {
   });
 
   const triggerMessage = addHumanMessage(room, "Mina", "We need to decide what ships tomorrow.");
-  routeAgentDecisions(room, triggerMessage, createAgentDecisions(room, triggerMessage));
+  const decisions = routeAgentDecisions(room, triggerMessage, createAgentDecisions(room, triggerMessage));
+  const speaker = decisions.find((decision) => decision.decision === "speak") || decisions[0];
+  const aiMessage = createAgentPlaceholder(room, speaker.agentId, speaker.id);
+  aiMessage.firstTokenLatencyMs = 42;
+  finalizeAgentMessage(aiMessage, "What absolutely has to ship by tomorrow?", 250);
   room.reportJobs.push({
     id: "job-1",
     roomId: room.id,
@@ -54,7 +60,8 @@ async function main() {
   const restored = loaded.get("persisted-room");
   assert.equal(restored.scenario.id, "group_project");
   assert.deepEqual(restored.selectedAgentIds, ["mediator_v1", "observer_v1"]);
-  assert.equal(restored.messages.length, 1);
+  assert.equal(restored.messages.length, 2);
+  assert.equal(restored.messages.find((message) => message.senderType === "ai").firstTokenLatencyMs, 42);
   assert.equal(restored.routingDecisions.length, 1);
   assert.equal(restored.reportJobs[0].id, "job-1");
   assert.equal(restored.sessionFeedback[0].routeNextAgentId, "observer_v1");
@@ -67,7 +74,11 @@ async function main() {
   const memoryStorage = new MemoryStorage();
   await memoryStorage.saveRoom(room);
   const memoryRooms = await memoryStorage.loadRooms();
-  assert.equal(memoryRooms.get("persisted-room").messages.length, 1);
+  assert.equal(memoryRooms.get("persisted-room").messages.length, 2);
+  assert.equal(
+    memoryRooms.get("persisted-room").messages.find((message) => message.senderType === "ai").firstTokenLatencyMs,
+    42,
+  );
 
   const fakeClient = {
     queries: [],
@@ -81,6 +92,13 @@ async function main() {
   assert.ok(writtenTables.some((sql) => sql.startsWith("insert into rooms")));
   assert.ok(writtenTables.some((sql) => sql.startsWith("insert into messages")));
   assert.ok(writtenTables.some((sql) => sql.startsWith("insert into agents")));
+  const aiMessageWrite = fakeClient.queries.find(
+    (entry) => entry.sql.startsWith("insert into messages") && entry.params[4] === "ai",
+  );
+  assert.ok(aiMessageWrite);
+  assert.ok(aiMessageWrite.sql.includes("first_token_latency_ms"));
+  assert.equal(aiMessageWrite.params[10], 250);
+  assert.equal(aiMessageWrite.params[11], 42);
   const routingDecisionWrite = fakeClient.queries.find((entry) =>
     entry.sql.startsWith("insert into routing_decisions"),
   );
