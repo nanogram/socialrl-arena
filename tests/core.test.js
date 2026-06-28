@@ -189,9 +189,15 @@ for (const statKey of [
   "wrongPersonFeedbackRate",
   "quietParticipantTargetRate",
   "targetUserCounts",
+  "humanConversationDelta",
+  "humanConversationLift",
+  "humanMomentumDirection",
 ]) {
   assert.ok(statKey in mediatorReport.stats, `agent stats should include ${statKey}`);
 }
+assert.ok(["more", "less", "same"].includes(mediatorReport.stats.humanMomentumDirection));
+assert.ok(Number.isFinite(mediatorReport.stats.humanConversationDelta));
+assert.ok(Number.isFinite(mediatorReport.stats.humanConversationLift));
 assert.ok(mediatorReport.stats.replyTargetRate > 0, "AI messages should preserve reply targeting in stats");
 assert.ok(
   Object.values(mediatorReport.stats.targetUserCounts).some((count) => count > 0),
@@ -306,6 +312,10 @@ assert.ok(
 assert.ok(
   improvedReport.comparison.every((item) => "replyTargetRate" in item.baseline && "wrongPersonFeedbackRate" in item.baseline),
   "comparison should include targeting metrics",
+);
+assert.ok(
+  improvedReport.comparison.every((item) => "humanConversationLift" in item.baseline && "humanMomentumDirection" in item.baseline),
+  "comparison should include human momentum metrics",
 );
 room.activePolicyOverrides = { mediator_v1: improvedReport.agents[0].policyDiff.after };
 room.currentPolicyVersion = `improved_from_${improvedReport.id.slice(0, 8)}`;

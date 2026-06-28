@@ -1313,6 +1313,8 @@ function renderAgentReport(agentReport) {
         ${metric("Human reply", `${Math.round(agentReport.stats.humanReplyRate * 100)}%`)}
         ${metric("Reply target", `${Math.round((agentReport.stats.replyTargetRate || 0) * 100)}%`)}
         ${metric("Wrong person", `${Math.round((agentReport.stats.wrongPersonFeedbackRate || 0) * 100)}%`)}
+        ${metric("Human trend", formatTag(agentReport.stats.humanMomentumDirection || "same"))}
+        ${metric("Human lift", signedPercent(agentReport.stats.humanConversationLift || 0))}
         ${metric("Selected", agentReport.stats.routingSelectedCount)}
         ${metric("Should speak", formatDecisionVerdict(agentReport.decisionReview && agentReport.decisionReview.shouldHaveSpoken))}
         ${metric("Msg/min", agentReport.stats.averageMessagesPerMinute)}
@@ -1496,6 +1498,9 @@ function renderShapeStats(agentReport) {
         ${metric("Quiet target", `${Math.round((stats.quietParticipantTargetRate || 0) * 100)}%`)}
         ${metric("Human before", stats.humanMessagesBeforeAiMessages)}
         ${metric("Human after", stats.humanMessagesAfterAiMessages)}
+        ${metric("Human delta", signed(stats.humanConversationDelta || 0))}
+        ${metric("Human lift", signedPercent(stats.humanConversationLift || 0))}
+        ${metric("Human trend", formatTag(stats.humanMomentumDirection || "same"))}
         ${metric("Route success", `${Math.round(stats.routingSuccessRate * 100)}%`)}
       </div>
       <div class="tag-list">
@@ -1674,6 +1679,8 @@ function comparisonColumn(title, values) {
       <span>${Number(values.helpedDecideTags || 0)} helped-decide tags</span>
       <span>${Math.round(Number(values.replyTargetRate || 0) * 100)}% reply-targeted</span>
       <span>${Math.round(Number(values.wrongPersonFeedbackRate || 0) * 100)}% wrong-person feedback</span>
+      <span>human trend ${escapeHtml(formatTag(values.humanMomentumDirection || "same"))}</span>
+      <span>human lift ${escapeHtml(signedPercent(values.humanConversationLift || 0))}</span>
       <span>Timing ${escapeHtml(String(values.timingScore || 0))} · Restraint ${escapeHtml(String(values.restraintScore || 0))}</span>
     </div>
   `;
@@ -1835,6 +1842,11 @@ function formatTag(tag) {
 function signed(value) {
   if (value > 0) return `+${value}`;
   return String(value);
+}
+
+function signedPercent(value) {
+  const number = Math.round(Number(value || 0) * 100);
+  return number > 0 ? `+${number}%` : `${number}%`;
 }
 
 function sumObjectValues(values) {

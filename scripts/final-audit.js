@@ -179,6 +179,9 @@ function demoReportCheck(exported) {
         "replyTargetRate" in agent.stats &&
         "targetedDecisionRate" in agent.stats &&
         "wrongPersonFeedbackRate" in agent.stats &&
+        "humanConversationDelta" in agent.stats &&
+        "humanConversationLift" in agent.stats &&
+        "humanMomentumDirection" in agent.stats &&
         agent.stats.targetUserCounts &&
         agent.decisionReview &&
         agent.decisionReview.shouldHaveSpoken &&

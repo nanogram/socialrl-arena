@@ -1275,6 +1275,7 @@ function buildAgentReport(room, agent) {
     (decision) => decision.route && decision.route.selectedAgentId === agent.id,
   ).length;
   const humanMessageWindow = countHumanMessagesAroundAiMessages(room, messages);
+  const humanConversationDelta = humanMessageWindow.after - humanMessageWindow.before;
   const targetedDecisions = decisions.filter((decision) => decision.targetUser).length;
   const replyTargetedMessages = messages.filter((message) => message.replyToMessageId).length;
   const quietParticipantTargets = decisions.filter(
@@ -1307,6 +1308,9 @@ function buildAgentReport(room, agent) {
     humanReplyRate: round(countHumanRepliesAfter(room, messages) / messageCount),
     humanMessagesBeforeAiMessages: humanMessageWindow.before,
     humanMessagesAfterAiMessages: humanMessageWindow.after,
+    humanConversationDelta,
+    humanConversationLift: round(humanConversationDelta / Math.max(1, humanMessageWindow.before)),
+    humanMomentumDirection: humanMomentumDirection(humanConversationDelta),
     feedbackTagCounts: tagCounts,
   };
 
@@ -1790,6 +1794,10 @@ function compareReports(previousReport, currentAgentReports) {
         replyTargetDelta: current.stats.replyTargetRate - previous.stats.replyTargetRate,
         wrongPersonDelta:
           current.stats.wrongPersonFeedbackRate - previous.stats.wrongPersonFeedbackRate,
+        humanConversationDeltaDelta:
+          current.stats.humanConversationDelta - previous.stats.humanConversationDelta,
+        humanConversationLiftDelta:
+          current.stats.humanConversationLift - previous.stats.humanConversationLift,
         timingScoreDelta: current.scorecard.timing - previous.scorecard.timing,
         restraintScoreDelta: current.scorecard.restraint - previous.scorecard.restraint,
       };
@@ -1812,6 +1820,9 @@ function comparisonSnapshot(agentReport) {
     routingSuccessRate: agentReport.stats.routingSuccessRate,
     replyTargetRate: agentReport.stats.replyTargetRate,
     wrongPersonFeedbackRate: agentReport.stats.wrongPersonFeedbackRate,
+    humanConversationDelta: agentReport.stats.humanConversationDelta,
+    humanConversationLift: agentReport.stats.humanConversationLift,
+    humanMomentumDirection: agentReport.stats.humanMomentumDirection,
   };
 }
 
@@ -1952,6 +1963,12 @@ function countHumanMessagesAroundAiMessages(room, aiMessages) {
     },
     { before: 0, after: 0 },
   );
+}
+
+function humanMomentumDirection(delta) {
+  if (delta > 0) return "more";
+  if (delta < 0) return "less";
+  return "same";
 }
 
 function calculateRoutingSuccessRate(messages) {

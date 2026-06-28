@@ -118,7 +118,7 @@ docker compose exec app npm run migrate:postgres
 - Normal-mode end-of-session feedback prompt for useful/annoying/route-next/reached-decision/invite-again signals
 - Late end-of-session feedback refreshes the latest Shape Report instead of being ignored
 - Shape Performance Reports
-- Agent routing success, messages-per-minute, human-before/after, and suitability scores
+- Agent routing success, messages-per-minute, human-before/after, human momentum lift, and suitability scores
 - Reply-targeting, target-user, wrong-person, and quiet-participant targeting stats in agent reports
 - Per-agent participation decision review showing recent speak/wait/stay-silent reasons, trigger messages, router selection, and feedback outcome
 - Routing recommendations include session feedback route-next/useful/annoying vote evidence
