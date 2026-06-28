@@ -34,6 +34,15 @@ npm run preflight
 npm run load-test:smoke
 ```
 
+After GitHub, deployment, and Loom are ready, audit the final handoff links:
+
+```bash
+LIVE_DEMO_URL=https://<host>/rooms/<room-id> \
+GITHUB_REPO_URL=https://github.com/<owner>/<repo> \
+LOOM_URL=https://www.loom.com/share/<video-id> \
+npm run final-audit
+```
+
 After pushing to GitHub, the `.github/workflows/ci.yml` workflow should run the same preflight and smoke-load gates against a memory-backed server.
 
 ## Reviewer Flow

@@ -40,6 +40,7 @@ function checkFiles() {
     "public/styles.css",
     "scripts/load-test.js",
     "scripts/demo-seed.js",
+    "scripts/final-audit.js",
   ];
 
   for (const file of required) {
@@ -58,6 +59,7 @@ function checkPackageScripts() {
     "load-test:target",
     "demo:seed",
     "preflight",
+    "final-audit",
   ]) {
     if (!pkg.scripts[script]) throw new Error(`Missing package script: ${script}`);
   }
@@ -101,6 +103,7 @@ function runSyntaxChecks() {
     "public/app.js",
     "scripts/load-test.js",
     "scripts/demo-seed.js",
+    "scripts/final-audit.js",
     "scripts/migrate-postgres.js",
   ];
 
