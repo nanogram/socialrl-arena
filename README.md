@@ -116,6 +116,7 @@ docker compose exec app npm run migrate:postgres
 - Late end-of-session feedback refreshes the latest Shape Report instead of being ignored
 - Shape Performance Reports
 - Agent routing success, messages-per-minute, human-before/after, and suitability scores
+- Routing recommendations include session feedback route-next/useful/annoying vote evidence
 - Report-generated policy diffs carried into the improved-policy rerun
 - Side-by-side before/after comparison with baseline and improved metrics
 - Agent-specific Shape pages with scorecard, quantitative stats, failure modes, policy diff, routing recommendation, and best/worst message context

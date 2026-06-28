@@ -113,11 +113,18 @@ addSessionFeedback(
 
 const report = buildReport(room, { systemContext: { activeRooms: 4, roomsTracked: 9 } });
 const mediatorReport = report.agents.find((agent) => agent.agentId === "mediator_v1");
+const observerReport = report.agents.find((agent) => agent.agentId === "observer_v1");
+const vibeReport = report.agents.find((agent) => agent.agentId === "vibe_friend_v1");
 
 assert.equal(report.policyMode, "baseline");
 assert.ok(report.summary.includes("baseline policy"));
 assert.equal(report.sessionFeedbackSummary.totalResponses, 1);
 assert.equal(report.sessionFeedbackSummary.routeNextAgentCounts.observer_v1, 1);
+assert.equal(observerReport.routingRecommendation.sessionFeedback.routeNextVotes, 1);
+assert.ok(observerReport.routingRecommendation.routeNextTime);
+assert.ok(observerReport.routingRecommendation.reason.includes("session feedback"));
+assert.equal(vibeReport.routingRecommendation.sessionFeedback.mostAnnoyingVotes, 1);
+assert.equal(vibeReport.routingRecommendation.routeNextTime, false);
 assert.ok(mediatorReport.policyDiff.after.includes("Speak only"));
 assert.ok(
   mediatorReport.policyDiff.after.includes("Use the agent's social voice") ||

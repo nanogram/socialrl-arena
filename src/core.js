@@ -1001,7 +1001,7 @@ function buildAgentReport(room, agent) {
       after: generateImprovedPolicy(agent, stats, tagCounts, room),
       rationale: inferPolicyRationale(stats, tagCounts),
     },
-    routingRecommendation: buildRoutingRecommendation(agent, scorecard),
+    routingRecommendation: buildRoutingRecommendation(agent, scorecard, room),
   };
 }
 
@@ -1465,7 +1465,22 @@ function contextAroundMessage(messages, messageId) {
   }));
 }
 
-function buildRoutingRecommendation(agent, scorecard) {
+function buildRoutingRecommendation(agent, scorecard, room) {
+  const routeNextVotes = room.sessionFeedback.filter((entry) => entry.routeNextAgentId === agent.id).length;
+  const mostUsefulVotes = room.sessionFeedback.filter((entry) => entry.mostUsefulAgentId === agent.id).length;
+  const mostAnnoyingVotes = room.sessionFeedback.filter((entry) => entry.mostAnnoyingAgentId === agent.id).length;
+  const baseRouteNextTime = scorecard.timing >= 3 && scorecard.groupMomentum >= 3;
+  const positiveVotes = routeNextVotes + mostUsefulVotes;
+  const routeNextTime =
+    routeNextVotes > mostAnnoyingVotes ||
+    (baseRouteNextTime && mostAnnoyingVotes <= positiveVotes);
+  const baseReason =
+    agent.id === "mediator_v1"
+      ? "Best fit when a group needs to make a decision without losing social context."
+      : agent.id === "vibe_friend_v1"
+        ? "Best fit when the room needs warmth and energy, but only with stricter timing."
+        : "Best fit when tension, silence, or ignored constraints matter more than entertainment.";
+
   return {
     agent: agent.name,
     recommendedFor: agent.routingFit,
@@ -1475,14 +1490,32 @@ function buildRoutingRecommendation(agent, scorecard) {
         : agent.id === "vibe_friend_v1"
           ? ["tense rooms", "decision-heavy rooms"]
           : ["rooms that are already flowing", "purely playful rooms"],
-    routeNextTime: scorecard.timing >= 3 && scorecard.groupMomentum >= 3,
-    reason:
-      agent.id === "mediator_v1"
-        ? "Best fit when a group needs to make a decision without losing social context."
-        : agent.id === "vibe_friend_v1"
-          ? "Best fit when the room needs warmth and energy, but only with stricter timing."
-          : "Best fit when tension, silence, or ignored constraints matter more than entertainment.",
+    routeNextTime,
+    reason: buildRoutingRecommendationReason(baseReason, {
+      routeNextVotes,
+      mostUsefulVotes,
+      mostAnnoyingVotes,
+    }),
+    sessionFeedback: {
+      routeNextVotes,
+      mostUsefulVotes,
+      mostAnnoyingVotes,
+    },
   };
+}
+
+function buildRoutingRecommendationReason(baseReason, feedbackVotes) {
+  const notes = [];
+  if (feedbackVotes.routeNextVotes > 0) {
+    notes.push(`${feedbackVotes.routeNextVotes} session feedback vote(s) explicitly routed this Shape into similar rooms.`);
+  }
+  if (feedbackVotes.mostUsefulVotes > 0) {
+    notes.push(`${feedbackVotes.mostUsefulVotes} user(s) marked it most useful.`);
+  }
+  if (feedbackVotes.mostAnnoyingVotes > feedbackVotes.routeNextVotes + feedbackVotes.mostUsefulVotes) {
+    notes.push(`${feedbackVotes.mostAnnoyingVotes} user(s) marked it most annoying, so route cautiously.`);
+  }
+  return [baseReason, ...notes].join(" ");
 }
 
 function buildAgentRoutingScores(agent, scorecard, stats, room) {

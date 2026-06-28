@@ -790,6 +790,7 @@ function renderShapePage(agentId) {
         </div>
         <p><strong>Avoid:</strong> ${(shape.routingRecommendation.avoidFor || []).map(escapeHtml).join(", ") || "No avoid list yet."}</p>
         <p><strong>Route next time:</strong> ${shape.routingRecommendation.routeNextTime ? "Yes" : "No"}</p>
+        ${renderRoutingFeedbackVotes(shape.routingRecommendation.sessionFeedback)}
         ${renderRoutingScores(shape.routingScores)}
       </article>
       ${renderMessageExamples("Best Messages", shape.bestMessages)}
@@ -1204,6 +1205,17 @@ function renderRoutingScores(scores) {
       ${entries
         .map(([key, value]) => `<span class="tag">${formatTag(key)} ${Math.round(Number(value) * 100)}%</span>`)
         .join("")}
+    </div>
+  `;
+}
+
+function renderRoutingFeedbackVotes(feedback = {}) {
+  if (!feedback) return "";
+  return `
+    <div class="metric-grid">
+      ${metric("Route votes", feedback.routeNextVotes || 0)}
+      ${metric("Useful votes", feedback.mostUsefulVotes || 0)}
+      ${metric("Annoying votes", feedback.mostAnnoyingVotes || 0)}
     </div>
   `;
 }
