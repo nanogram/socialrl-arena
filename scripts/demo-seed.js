@@ -1,5 +1,6 @@
 const fs = require("fs/promises");
 const http = require("http");
+const https = require("https");
 const path = require("path");
 const WebSocket = require("ws");
 
@@ -103,7 +104,8 @@ function connect(roomId) {
 
 function fetchJson(urlPath) {
   return new Promise((resolve, reject) => {
-    http
+    const client = baseUrl.startsWith("https:") ? https : http;
+    client
       .get(`${baseUrl}${urlPath}`, (res) => {
         let body = "";
         res.on("data", (chunk) => {

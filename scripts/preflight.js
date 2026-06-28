@@ -82,6 +82,7 @@ function checkSpecMarkers() {
   const env = fs.readFileSync(".env.example", "utf8");
   const readme = fs.readFileSync("README.md", "utf8");
   const loadTest = fs.readFileSync("scripts/load-test.js", "utf8");
+  const demoSeed = fs.readFileSync("scripts/demo-seed.js", "utf8");
   const targetLoad = fs.readFileSync("scripts/run-target-load.js", "utf8");
   const finalAudit = fs.readFileSync("scripts/final-audit.js", "utf8");
   const finalHandoff = fs.readFileSync("scripts/final-handoff.js", "utf8");
@@ -102,6 +103,7 @@ function checkSpecMarkers() {
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
     ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports", "Final Submission Status", "LIVE_DEMO_URL", "GITHUB_REPO_URL", "LOOM_URL"]],
     ["scripts/load-test.js", loadTest, ["lastAiMessageId", "LOAD_TEST_OUTPUT_PATH", "passed"]],
+    ["scripts/demo-seed.js", demoSeed, ["require(\"https\")", "baseUrl.startsWith(\"https:\")"]],
     ["scripts/run-target-load.js", targetLoad, ["SOCIALRL_STORAGE", "target-load-latest.json", "LOAD_TEST_MESSAGES_PER_ROOM"]],
     ["scripts/final-audit.js", finalAudit, ["FINAL_AUDIT_LOCAL_ONLY", "mode: localOnly", "aiOnlyFeedbackCheck", "demoScenarioFidelityCheck", "reportJudgePromptCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
     ["scripts/final-handoff.js", finalHandoff, ["SocialRL Arena Final Handoff", "Target Load Evidence", "Local Audit", "Final Audit", "Reviewer Path"]],
