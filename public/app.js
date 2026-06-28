@@ -1248,7 +1248,66 @@ function renderRoomMetrics() {
       <p><strong>State:</strong> ${escapeHtml(stats.groupState || room.currentGroupState)}</p>
       <p><strong>Router:</strong> ${escapeHtml(room.routerVersion)} · <strong>Policy:</strong> ${escapeHtml(room.currentPolicyVersion)}</p>
     </article>
+    ${renderLiveTelemetry(room, latestReport)}
   `;
+}
+
+function renderLiveTelemetry(room, latestReport) {
+  const aiMessages = room.messages.filter((message) => message.senderType === "ai");
+  const fullLatencies = aiMessages
+    .map((message) => Number(message.latencyMs))
+    .filter(Number.isFinite);
+  const firstTokenLatencies = aiMessages
+    .map((message) => Number(message.firstTokenLatencyMs))
+    .filter(Number.isFinite);
+  const latestAi = [...aiMessages].reverse().find((message) => Number.isFinite(message.latencyMs)) || null;
+  const latestJob = room.reportJobs[room.reportJobs.length - 1] || null;
+  const activeJobs = room.reportJobs.filter((job) => ["queued", "processing"].includes(job.status));
+  const latestRoute = room.routingDecisions[room.routingDecisions.length - 1] || null;
+  const reportPlan = latestReport && latestReport.modelRoutingSummary && latestReport.modelRoutingSummary.latestPlan;
+  const modelPlan = (latestRoute && latestRoute.modelRouting) || reportPlan || {};
+  const sessionFeedbackCount = Array.isArray(room.sessionFeedback) ? room.sessionFeedback.length : 0;
+
+  return `
+    <article class="report-card live-telemetry-card">
+      <div class="report-title"><strong>Live Eval Telemetry</strong></div>
+      <div class="metric-grid">
+        ${metric("Avg full latency", formatMs(averageNumber(fullLatencies)))}
+        ${metric("Avg first token", formatMs(averageNumber(firstTokenLatencies)))}
+        ${metric("Last AI latency", latestAi ? formatMs(latestAi.latencyMs) : "n/a")}
+        ${metric("Last tokens", latestAi && Number.isFinite(latestAi.tokenCount) ? latestAi.tokenCount : "n/a")}
+        ${metric("Message feedback", room.feedback.length)}
+        ${metric("Session feedback", sessionFeedbackCount)}
+        ${metric("Report queue", activeJobs.length)}
+        ${metric("Last report", latestJob && Number.isFinite(latestJob.latencyMs) ? formatMs(latestJob.latencyMs) : latestJob ? formatTag(latestJob.status) : "n/a")}
+      </div>
+      <p><strong>Group state:</strong> ${escapeHtml(room.currentGroupState || "active")}</p>
+      <p><strong>Active policy:</strong> ${escapeHtml(room.policyMode)} · ${escapeHtml(room.currentPolicyVersion)}</p>
+      ${renderModelStepTags(modelPlan)}
+    </article>
+  `;
+}
+
+function renderModelStepTags(plan = {}) {
+  const stages = [
+    ["classification", "Classification"],
+    ["decision", "Decision"],
+    ["router", "Router"],
+    ["message", "Message"],
+    ["feedbackAggregation", "Feedback"],
+    ["report", "Report"],
+    ["policy", "Policy"],
+  ];
+  const tags = stages
+    .map(([key, label]) => {
+      const stage = plan[key];
+      if (!stage) return "";
+      return `<span class="tag">${escapeHtml(label)} · ${escapeHtml(stage.tier)} · ${escapeHtml(stage.modelName)}</span>`;
+    })
+    .join("");
+
+  if (!tags) return `<p>No model routing plan recorded yet.</p>`;
+  return `<div class="tag-list model-step-tags">${tags}</div>`;
 }
 
 function renderReport() {
@@ -1887,6 +1946,16 @@ function signed(value) {
 function signedPercent(value) {
   const number = Math.round(Number(value || 0) * 100);
   return number > 0 ? `+${number}%` : `${number}%`;
+}
+
+function formatMs(value) {
+  if (!Number.isFinite(Number(value))) return "n/a";
+  return `${Math.round(Number(value))} ms`;
+}
+
+function averageNumber(values) {
+  if (!values.length) return NaN;
+  return values.reduce((total, value) => total + Number(value || 0), 0) / values.length;
 }
 
 function sumObjectValues(values) {

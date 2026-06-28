@@ -131,6 +131,7 @@ docker compose exec app npm run migrate:postgres
 - Agent-specific Shape pages with scorecard, quantitative stats, failure modes, policy diff, routing recommendation, and best/worst message context
 - Normal chat mode keeps active participants, invite, end-session, and report actions visible without exposing debug panels
 - Active policy/model/prompt visibility in the debug/eval panel
+- Live debug/eval telemetry for latency, report queue, feedback counts, group state, active policy, and model steps
 - Toggle between normal chat and debug/eval views
 - Export transcript/report JSON with sender, reply, latency, token, model, prompt, and policy metadata
 - Scripted sample session for quick demos

@@ -24,6 +24,7 @@ function main() {
   const checks = [
     ...requiredFiles.map((file) => fileCheck(file)),
     gitRemoteCheck(),
+    debugTelemetryCheck(),
     ...latestDemoArtifactChecks(),
     ...targetLoadArtifactChecks(),
     ...requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label)),
@@ -52,6 +53,27 @@ function gitRemoteCheck() {
   } catch (error) {
     return { name: "git:origin", status: "fail", detail: "missing origin remote" };
   }
+}
+
+function debugTelemetryCheck() {
+  const appPath = path.join(process.cwd(), "public", "app.js");
+  const app = fs.existsSync(appPath) ? fs.readFileSync(appPath, "utf8") : "";
+  const requiredMarkers = [
+    "renderLiveTelemetry",
+    "live-telemetry-card",
+    "Avg first token",
+    "Report queue",
+    "model-step-tags",
+    "Active policy",
+  ];
+  const missing = requiredMarkers.filter((marker) => !app.includes(marker));
+  return {
+    name: "ui:debug-telemetry",
+    status: missing.length ? "fail" : "pass",
+    detail: missing.length
+      ? `debug/eval UI missing ${missing.join(", ")}`
+      : "debug/eval UI includes live latency, report queue, policy, feedback, and model-step telemetry",
+  };
 }
 
 function latestDemoArtifactChecks() {
