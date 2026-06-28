@@ -103,6 +103,7 @@ docker compose exec app npm run migrate:postgres
 - Agent speak/wait/stay-silent decisions
 - Explicit stayed-silent WebSocket events for debug/eval views
 - Router decision panel with selected Shape, blocked Shapes, group state, and candidate scores
+- Rule-based router policy for planning, tense, playful/high-momentum, and feedback-adjusted turns
 - Streaming AI message simulation
 - WebSocket payloads include spec-style snake_case aliases alongside internal camelCase fields
 - WebSocket client events accept spec-style snake_case and camelCase field names, including event-level `room_id`

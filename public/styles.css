@@ -670,6 +670,13 @@ body[data-view="chat"][data-debug-panel="hidden"] .message {
   color: var(--muted);
 }
 
+.candidate-row em {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.3;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

@@ -499,13 +499,16 @@ function routeAgentDecisions(room, triggerMessage, rawDecisions) {
 }
 
 function buildRoutingDecision(room, triggerMessage, rawDecisions) {
-  const candidates = rawDecisions
+  const signals = extractSignals(room, triggerMessage);
+  const policyResult = applyRoutingPolicy(room, signals, rawDecisions);
+  const routedInput = policyResult.decisions;
+  const candidates = routedInput
     .filter((decision) => decision.decision === "speak")
     .sort((a, b) => b.confidence - a.confidence);
-  const winner = candidates[0] || null;
+  const winner = pickRoutedWinner(room, signals, candidates) || null;
   const routeReason = winner
-    ? `${winner.agentName} had the strongest ${winner.groupState} fit.`
-    : "No agent crossed the speak threshold.";
+    ? routingReasonForWinner(room, signals, winner)
+    : policyResult.noWinnerReason || "No agent crossed the speak threshold.";
   const routingDecision = {
     id: randomUUID(),
     roomId: room.id,
@@ -513,24 +516,25 @@ function buildRoutingDecision(room, triggerMessage, rawDecisions) {
     routerVersion: room.routerVersion,
     routerModelName: "local-rule-router",
     roomType: room.scenario.roomType,
-    groupState: rawDecisions[0] ? rawDecisions[0].groupState : room.currentGroupState,
+    groupState: signals.groupState || (routedInput[0] ? routedInput[0].groupState : room.currentGroupState),
     selectedAgentId: winner ? winner.agentId : null,
     selectedAgentName: winner ? winner.agentName : null,
     reason: routeReason,
-    candidateScores: rawDecisions.map((decision) => ({
+    candidateScores: routedInput.map((decision) => ({
       agentId: decision.agentId,
       agentName: decision.agentName,
       decision: decision.decision,
       confidence: decision.confidence,
       groupState: decision.groupState,
+      ruleAdjustments: decision.ruleAdjustments || [],
     })),
-    blockedAgentIds: rawDecisions
-      .filter((decision) => winner && decision.agentId !== winner.agentId && decision.decision === "speak")
+    blockedAgentIds: routedInput
+      .filter((decision) => decision.ruleBlocked || (winner && decision.agentId !== winner.agentId && decision.decision === "speak"))
       .map((decision) => decision.agentId),
     createdAt: new Date().toISOString(),
   };
 
-  const routed = rawDecisions.map((decision) => {
+  const routed = routedInput.map((decision) => {
     const route = {
       routingDecisionId: routingDecision.id,
       routerVersion: room.routerVersion,
@@ -554,6 +558,126 @@ function buildRoutingDecision(room, triggerMessage, rawDecisions) {
   });
 
   return { routingDecision, routedDecisions: routed };
+}
+
+function applyRoutingPolicy(room, signals, rawDecisions) {
+  const feedbackStats = buildRoutingFeedbackStats(room);
+  let noWinnerReason = null;
+  const decisions = rawDecisions.map((decision) => {
+    const stats = feedbackStats[decision.agentId] || createEmptyRoutingFeedbackStats();
+    const adjusted = {
+      ...decision,
+      confidence: Number(decision.confidence || 0),
+      groupState: signals.groupState || decision.groupState,
+      ruleAdjustments: [],
+    };
+
+    if (stats.shouldStayQuietRate > 0.2 || stats.interruptionRate > 0.25) {
+      adjusted.confidence -= 0.22;
+      adjusted.ruleAdjustments.push("raised restraint after timing feedback");
+    }
+
+    if (stats.helpedDecideRate > 0.3 && room.scenario.roomType === "planning" && decision.agentId === "mediator_v1") {
+      adjusted.confidence += 0.12;
+      adjusted.ruleAdjustments.push("boosted after decision-helpfulness feedback");
+    }
+
+    if (signals.tension && decision.agentId === "vibe_friend_v1") {
+      adjusted.decision = "wait";
+      adjusted.ruleBlocked = true;
+      adjusted.ruleAdjustments.push("blocked Vibe Friend in tense room");
+    }
+
+    if (signals.playful && signals.activeHumanExchange) {
+      if (decision.agentId === "vibe_friend_v1" && adjusted.confidence < 0.8) {
+        adjusted.decision = "stay_silent";
+        adjusted.ruleBlocked = true;
+        adjusted.ruleAdjustments.push("held Vibe Friend below 80% confidence during playful human momentum");
+      }
+      if (decision.agentId !== "vibe_friend_v1") {
+        adjusted.confidence -= 0.18;
+        adjusted.ruleAdjustments.push("down-ranked non-vibe agent in playful momentum");
+      }
+    }
+
+    adjusted.confidence = round(Math.max(0, Math.min(0.99, adjusted.confidence)));
+    if (adjusted.decision === "speak" && adjusted.confidence < thresholdFor(adjusted.agentId, room.policyMode === "improved")) {
+      adjusted.decision = signals.activeHumanExchange ? "stay_silent" : "wait";
+      adjusted.ruleAdjustments.push("fell below policy speak threshold after routing adjustments");
+    }
+
+    if (adjusted.ruleAdjustments.length) {
+      adjusted.reason = `${adjusted.reason} Router: ${adjusted.ruleAdjustments.join("; ")}.`;
+    }
+
+    return adjusted;
+  });
+
+  if (!decisions.some((decision) => decision.decision === "speak")) {
+    noWinnerReason = "Routing policy held all agents back for this turn.";
+  }
+
+  return { decisions, noWinnerReason };
+}
+
+function pickRoutedWinner(room, signals, candidates) {
+  if (!candidates.length) return null;
+
+  if (signals.tension) {
+    return (
+      candidates.find((decision) => decision.agentId === "observer_v1") ||
+      candidates.find((decision) => decision.agentId === "mediator_v1") ||
+      null
+    );
+  }
+
+  if (room.scenario.roomType === "planning" && signals.decisionNeeded) {
+    return candidates.find((decision) => decision.agentId === "mediator_v1") || candidates[0];
+  }
+
+  if (signals.playful) {
+    return candidates.find((decision) => decision.agentId === "vibe_friend_v1") || candidates[0];
+  }
+
+  return candidates[0];
+}
+
+function routingReasonForWinner(room, signals, winner) {
+  if (signals.tension && ["observer_v1", "mediator_v1"].includes(winner.agentId)) {
+    return `${winner.agentName} was routed because tense rooms need low-ego mediation, not extra social energy.`;
+  }
+  if (room.scenario.roomType === "planning" && signals.decisionNeeded && winner.agentId === "mediator_v1") {
+    return "Mediator was routed because a planning room needed a concrete decision.";
+  }
+  if (signals.playful && winner.agentId === "vibe_friend_v1") {
+    return "Vibe Friend was routed because the room was playful and its confidence cleared the social-energy threshold.";
+  }
+  return `${winner.agentName} had the strongest ${winner.groupState} fit.`;
+}
+
+function buildRoutingFeedbackStats(room) {
+  return getRoomAgents(room).reduce((statsByAgent, agent) => {
+    const messages = room.messages.filter((message) => message.agentId === agent.id);
+    const feedback = room.feedback.filter((entry) =>
+      messages.some((message) => message.id === entry.messageId),
+    );
+    const tagCounts = countBy(feedback, "tag");
+    const messageCount = Math.max(1, messages.length);
+    statsByAgent[agent.id] = {
+      interruptionRate: round((messages.filter((message) => wasLikelyInterruption(room, message)).length + (tagCounts.interrupted_humans || 0)) / messageCount),
+      shouldStayQuietRate: round((tagCounts.should_have_stayed_quiet || 0) / messageCount),
+      helpedDecideRate: round(((tagCounts.helped_us_decide || 0) + (tagCounts.asked_useful_question || 0)) / messageCount),
+    };
+    return statsByAgent;
+  }, {});
+}
+
+function createEmptyRoutingFeedbackStats() {
+  return {
+    interruptionRate: 0,
+    shouldStayQuietRate: 0,
+    helpedDecideRate: 0,
+  };
 }
 
 function recordRoutedDecisions(room, routingDecision, routedDecisions) {

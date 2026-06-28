@@ -777,12 +777,18 @@ function renderCandidateScores(candidateScores) {
               <span>${escapeHtml(candidate.agentName || candidate.agentId)}</span>
               <strong>${Math.round((candidate.confidence || 0) * 100)}%</strong>
               <small>${escapeHtml(formatDecision(candidate.decision || "wait"))}</small>
+              ${renderRuleAdjustments(candidate.ruleAdjustments)}
             </div>
           `,
         )
         .join("")}
     </div>
   `;
+}
+
+function renderRuleAdjustments(ruleAdjustments) {
+  if (!Array.isArray(ruleAdjustments) || !ruleAdjustments.length) return "";
+  return `<em>${ruleAdjustments.map(escapeHtml).join("; ")}</em>`;
 }
 
 function renderThinkingState() {

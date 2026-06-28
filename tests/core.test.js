@@ -29,6 +29,31 @@ function runAgentTurn(room, displayName, content) {
   return { aiMessage, decisions };
 }
 
+function makeDecision(room, triggerMessage, agentId, input = {}) {
+  const names = {
+    mediator_v1: "Mediator",
+    vibe_friend_v1: "Vibe Friend",
+    observer_v1: "Observer",
+  };
+  return {
+    id: `${agentId}-${input.id || "decision"}`,
+    roomId: room.id,
+    triggerMessageId: triggerMessage.id,
+    agentId,
+    agentName: names[agentId],
+    decision: input.decision || "speak",
+    targetUser: null,
+    reason: input.reason || "test route candidate",
+    confidence: input.confidence === undefined ? 0.7 : input.confidence,
+    groupState: input.groupState || "active",
+    roomType: room.scenario.roomType,
+    modelName: "test-model",
+    promptVersion: "test-prompt",
+    policyVersion: "test-policy",
+    createdAt: new Date().toISOString(),
+  };
+}
+
 const room = createRoom("test-room");
 assert.equal(getRoomAgents(room).length, 3, "default room should include three spec agents");
 
@@ -166,5 +191,84 @@ const routerPrompt = buildRouterPrompt({ room: promptRoom, triggerMessage, decis
 assert.equal(decisionPrompt.version, "agent_decision_prompt_v1");
 assert.equal(routerPrompt.version, "router_prompt_v1");
 assert.ok(decisionPrompt.user.includes("speak, stay_silent, or wait"));
+
+const tenseRouteRoom = createRoom("tense-route", {
+  scenarioId: "friend_conflict",
+  agentIds: ["vibe_friend_v1", "observer_v1", "mediator_v1"],
+});
+const tenseTrigger = addHumanMessage(tenseRouteRoom, "Rae", "Nobody is listening and this is annoying.");
+const tenseDecisions = routeAgentDecisions(tenseRouteRoom, tenseTrigger, [
+  makeDecision(tenseRouteRoom, tenseTrigger, "vibe_friend_v1", {
+    confidence: 0.95,
+    groupState: "tense",
+    id: "vibe-tense",
+  }),
+  makeDecision(tenseRouteRoom, tenseTrigger, "observer_v1", {
+    confidence: 0.72,
+    groupState: "tense",
+    id: "observer-tense",
+  }),
+  makeDecision(tenseRouteRoom, tenseTrigger, "mediator_v1", {
+    confidence: 0.65,
+    groupState: "tense",
+    id: "mediator-tense",
+  }),
+]);
+const tenseRoute = tenseRouteRoom.routingDecisions.at(-1);
+assert.equal(tenseRoute.selectedAgentId, "observer_v1");
+assert.ok(tenseRoute.blockedAgentIds.includes("vibe_friend_v1"));
+assert.equal(
+  tenseDecisions.find((decision) => decision.agentId === "vibe_friend_v1").decision,
+  "wait",
+);
+
+const playfulRouteRoom = createRoom("playful-route", {
+  agentIds: ["vibe_friend_v1", "mediator_v1"],
+});
+addHumanMessage(playfulRouteRoom, "Alex", "lol this trip plan has main character energy");
+const playfulTrigger = addHumanMessage(playfulRouteRoom, "Jules", "haha the chaos is honestly funny");
+routeAgentDecisions(playfulRouteRoom, playfulTrigger, [
+  makeDecision(playfulRouteRoom, playfulTrigger, "vibe_friend_v1", {
+    confidence: 0.7,
+    groupState: "playful",
+    id: "vibe-playful",
+  }),
+  makeDecision(playfulRouteRoom, playfulTrigger, "mediator_v1", {
+    confidence: 0.5,
+    groupState: "playful",
+    id: "mediator-playful",
+  }),
+]);
+const playfulRoute = playfulRouteRoom.routingDecisions.at(-1);
+assert.equal(playfulRoute.selectedAgentId, null);
+assert.ok(playfulRoute.blockedAgentIds.includes("vibe_friend_v1"));
+
+const feedbackRouteRoom = createRoom("feedback-route", {
+  agentIds: ["mediator_v1", "observer_v1"],
+});
+const firstFeedbackTrigger = addHumanMessage(feedbackRouteRoom, "Alex", "Can we decide this soon?");
+const oldMediatorMessage = createAgentPlaceholder(feedbackRouteRoom, "mediator_v1", "old-decision");
+finalizeAgentMessage(oldMediatorMessage, "Here is a long summary that interrupts the group.", 250);
+addFeedback(feedbackRouteRoom, oldMediatorMessage.id, "should_have_stayed_quiet", "test_user");
+const feedbackTrigger = addHumanMessage(feedbackRouteRoom, "Sam", "I think humans were already sorting this out.");
+routeAgentDecisions(feedbackRouteRoom, feedbackTrigger, [
+  makeDecision(feedbackRouteRoom, feedbackTrigger, "mediator_v1", {
+    confidence: 0.5,
+    groupState: "decision_needed",
+    id: "mediator-feedback",
+  }),
+  makeDecision(feedbackRouteRoom, feedbackTrigger, "observer_v1", {
+    confidence: 0.55,
+    groupState: "decision_needed",
+    id: "observer-feedback",
+  }),
+]);
+const feedbackRoute = feedbackRouteRoom.routingDecisions.at(-1);
+assert.equal(feedbackRoute.selectedAgentId, "observer_v1");
+assert.ok(
+  feedbackRoute.candidateScores
+    .find((candidate) => candidate.agentId === "mediator_v1")
+    .ruleAdjustments.includes("raised restraint after timing feedback"),
+);
 
 console.log("core loop tests passed");

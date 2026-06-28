@@ -70,9 +70,9 @@ function checkSpecMarkers() {
 
   for (const [file, body, markers] of [
     ["public/index.html", html, ["debugToggleButton", "displayNameInput", "participants", "policies", "routingDecisions"]],
-    ["public/app.js", app, ["AI Shape", "basePersonality", "candidateScores", "comparisonColumn", "renderParticipants", "renderPolicies", "renderRoutingDecisions", "renderThinkingState", "socialrl_debug_panel", "socialrl_display_name"]],
+    ["public/app.js", app, ["AI Shape", "basePersonality", "candidateScores", "comparisonColumn", "renderParticipants", "renderPolicies", "renderRuleAdjustments", "renderRoutingDecisions", "renderThinkingState", "socialrl_debug_panel", "socialrl_display_name"]],
     ["src/server.js", server, ["addMessageAliases", "agent_stayed_silent", "eventValue", "message_stream_delta", "report_url", "resolveEventRoom", "sender_name"]],
-    ["src/core.js", core, ["activePolicyOverrides", "generateImprovedPolicy", "routingScores", "p99FullResponseLatencyMs", "routeNextAgentCounts"]],
+    ["src/core.js", core, ["activePolicyOverrides", "applyRoutingPolicy", "generateImprovedPolicy", "pickRoutedWinner", "routingScores", "p99FullResponseLatencyMs", "routeNextAgentCounts"]],
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "routerModelName"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
   ]) {
