@@ -100,6 +100,7 @@ class HttpLlmProvider {
       room.decisions.push(...decisions);
       return decisions;
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("LLM decision provider failed, using local fallback:", error.message);
       return fallback();
     }
@@ -123,6 +124,7 @@ class HttpLlmProvider {
       const decisions = normalizeDecisionResponse(response);
       return decisions.length ? decisions : fallback();
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("LLM decision provider failed, using local fallback:", error.message);
       return fallback();
     }
@@ -147,6 +149,7 @@ class HttpLlmProvider {
       const result = normalizeRouteResponse(response);
       return result || fallback();
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("LLM router provider failed, using local fallback:", error.message);
       return fallback();
     }
@@ -176,6 +179,7 @@ class HttpLlmProvider {
         promptVersion: response.promptVersion || prompt.version,
       };
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("LLM message provider failed, using local fallback:", error.message);
       return fallback();
     }
@@ -202,6 +206,7 @@ class HttpLlmProvider {
         promptVersion: prompt.version,
       });
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("LLM report judge provider failed, using local fallback:", error.message);
       return fallback();
     }
@@ -263,6 +268,7 @@ class OpenAIResponsesProvider {
       );
       return decisions.length ? decisions : fallback();
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("OpenAI decision call failed, using fallback:", error.message);
       return fallback();
     }
@@ -299,6 +305,7 @@ class OpenAIResponsesProvider {
       });
       return { routingDecision, routedDecisions };
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("OpenAI router call failed, using fallback:", error.message);
       return fallback();
     }
@@ -323,6 +330,7 @@ class OpenAIResponsesProvider {
         promptVersion: prompt.version,
       };
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("OpenAI message call failed, using fallback:", error.message);
       return fallback();
     }
@@ -345,6 +353,7 @@ class OpenAIResponsesProvider {
         promptVersion: prompt.version,
       });
     } catch (error) {
+      recordProviderFailure(room, error);
       console.error("OpenAI report judge call failed, using fallback:", error.message);
       return fallback();
     }
@@ -493,6 +502,20 @@ function mergeJudgedReport(draftReport, response, metadata = {}) {
     judgedAt,
   };
   return report;
+}
+
+function recordProviderFailure(room, error) {
+  if (!room || !room.runtimeMetrics) return;
+  room.runtimeMetrics.llmErrors = Number(room.runtimeMetrics.llmErrors || 0) + 1;
+  if (isTimeoutError(error)) {
+    room.runtimeMetrics.timeouts = Number(room.runtimeMetrics.timeouts || 0) + 1;
+  }
+}
+
+function isTimeoutError(error) {
+  const name = String((error && error.name) || "").toLowerCase();
+  const message = String((error && error.message) || "").toLowerCase();
+  return name === "aborterror" || message.includes("timeout") || message.includes("timed out");
 }
 
 function extractReportPatch(response) {
@@ -697,10 +720,12 @@ module.exports = {
   OpenAIResponsesProvider,
   createLlmProvider,
   _internals: {
+    isTimeoutError,
     normalizeDecisionResponse,
     normalizeRouteResponse,
     mergeJudgedReport,
     parseOpenAIResponseJson,
+    recordProviderFailure,
     enrichExternalDecision,
     enrichRoutingDecision,
   },

@@ -100,6 +100,35 @@ async function main() {
       _internals.parseOpenAIResponseJson({ output_text: '{"content":"ok"}' }),
       { content: "ok" },
     );
+
+    const timeoutRoom = createRoom("provider-timeout-room");
+    const timeoutTrigger = addHumanMessage(timeoutRoom, "Alex", "Can we decide?");
+    const timeoutError = new Error("The model request timed out.");
+    timeoutError.name = "AbortError";
+    global.fetch = async () => {
+      throw timeoutError;
+    };
+
+    const originalConsoleError = console.error;
+    let fallbackDecisions;
+    try {
+      console.error = () => {};
+      fallbackDecisions = await provider.decideAgents({
+        room: timeoutRoom,
+        triggerMessage: timeoutTrigger,
+        fallback: () => [],
+      });
+    } finally {
+      console.error = originalConsoleError;
+    }
+    assert.deepEqual(fallbackDecisions, []);
+    assert.equal(timeoutRoom.runtimeMetrics.llmErrors, 1);
+    assert.equal(timeoutRoom.runtimeMetrics.timeouts, 1);
+
+    const timeoutReport = buildReport(timeoutRoom);
+    assert.equal(timeoutReport.systemPerformance.llmErrorRate, 1);
+    assert.equal(timeoutReport.systemPerformance.timeoutRate, 1);
+    assert.ok(_internals.isTimeoutError(timeoutError));
   } finally {
     global.fetch = originalFetch;
   }
