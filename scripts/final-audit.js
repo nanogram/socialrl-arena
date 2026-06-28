@@ -175,6 +175,11 @@ function demoReportCheck(exported) {
     room.routingDecisions.every((decision) => decision.modelRouting && decision.modelRouting.decision) &&
     agentReports.every(
       (agent) =>
+        agent.stats &&
+        "replyTargetRate" in agent.stats &&
+        "targetedDecisionRate" in agent.stats &&
+        "wrongPersonFeedbackRate" in agent.stats &&
+        agent.stats.targetUserCounts &&
         agent.decisionReview &&
         agent.decisionReview.shouldHaveSpoken &&
         Array.isArray(agent.decisionReview.sampledDecisions),
@@ -189,7 +194,7 @@ function demoReportCheck(exported) {
     status: ok ? "pass" : "fail",
     detail: ok
       ? `${agentReports.length} agent reports include routing, performance, model-routing, and decision-review evidence`
-      : "latest report missing agent selection rules, model routing, decision review, routing feedback, routing scores, or system performance fields",
+      : "latest report missing agent selection rules, model routing, targeting stats, decision review, routing feedback, routing scores, or system performance fields",
   };
 }
 

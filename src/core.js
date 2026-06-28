@@ -1212,11 +1212,17 @@ function buildAgentReport(room, agent) {
   const shouldStayQuietCount = tagCounts.should_have_stayed_quiet || 0;
   const helpedDecideCount = (tagCounts.helped_us_decide || 0) + (tagCounts.asked_useful_question || 0);
   const messageCount = messages.length || 1;
+  const decisionCount = decisions.length || 1;
   const feedbackCount = feedback.length || 1;
   const routingSelectedCount = decisions.filter(
     (decision) => decision.route && decision.route.selectedAgentId === agent.id,
   ).length;
   const humanMessageWindow = countHumanMessagesAroundAiMessages(room, messages);
+  const targetedDecisions = decisions.filter((decision) => decision.targetUser).length;
+  const replyTargetedMessages = messages.filter((message) => message.replyToMessageId).length;
+  const quietParticipantTargets = decisions.filter(
+    (decision) => decision.targetUser && targetUserIsNotTriggerSender(room, decision),
+  ).length;
 
   const stats = {
     totalMessages: messages.length,
@@ -1234,6 +1240,13 @@ function buildAgentReport(room, agent) {
     interruptionRate: round((interruptionCount + (tagCounts.interrupted_humans || 0)) / messageCount),
     decisionHelpfulnessRate: round(helpedDecideCount / messageCount),
     shouldHaveStayedQuietRate: round(shouldStayQuietCount / messageCount),
+    targetedDecisions,
+    targetedDecisionRate: round(targetedDecisions / decisionCount),
+    replyTargetedMessages,
+    replyTargetRate: round(replyTargetedMessages / messageCount),
+    wrongPersonFeedbackRate: round((tagCounts.responded_wrong_person || 0) / messageCount),
+    quietParticipantTargetRate: round(quietParticipantTargets / decisionCount),
+    targetUserCounts: countBy(decisions.filter((decision) => decision.targetUser), "targetUser"),
     humanReplyRate: round(countHumanRepliesAfter(room, messages) / messageCount),
     humanMessagesBeforeAiMessages: humanMessageWindow.before,
     humanMessagesAfterAiMessages: humanMessageWindow.after,
@@ -1396,6 +1409,7 @@ function inferFailureModes(stats, tagCounts) {
   ) modes.push("Bad timing");
   if (tagCounts.too_verbose || tagCounts.repeated_obvious_info) modes.push("Too verbose");
   if (tagCounts.wrong_vibe || tagCounts.wrong_tone || tagCounts.misread_room) modes.push("Wrong vibe");
+  if (tagCounts.responded_wrong_person) modes.push("Wrong person targeting");
   if (tagCounts.ignored_quiet_person) modes.push("Ignored quiet participant");
   if (tagCounts.too_assistant_like || tagCounts.too_generic) modes.push("Generic assistant voice");
   if (tagCounts.out_of_character || tagCounts.broke_character) modes.push("Personality drift");
@@ -1716,6 +1730,9 @@ function compareReports(previousReport, currentAgentReports) {
           current.stats.shouldHaveStayedQuietRate - previous.stats.shouldHaveStayedQuietRate,
         helpedDecideDelta:
           current.stats.decisionHelpfulnessRate - previous.stats.decisionHelpfulnessRate,
+        replyTargetDelta: current.stats.replyTargetRate - previous.stats.replyTargetRate,
+        wrongPersonDelta:
+          current.stats.wrongPersonFeedbackRate - previous.stats.wrongPersonFeedbackRate,
         timingScoreDelta: current.scorecard.timing - previous.scorecard.timing,
         restraintScoreDelta: current.scorecard.restraint - previous.scorecard.restraint,
       };
@@ -1736,6 +1753,8 @@ function comparisonSnapshot(agentReport) {
     decisionImpactScore: agentReport.scorecard.decisionImpact,
     decisionHelpfulnessRate: agentReport.stats.decisionHelpfulnessRate,
     routingSuccessRate: agentReport.stats.routingSuccessRate,
+    replyTargetRate: agentReport.stats.replyTargetRate,
+    wrongPersonFeedbackRate: agentReport.stats.wrongPersonFeedbackRate,
   };
 }
 
@@ -1839,6 +1858,11 @@ function targetUserForDecision(agent, signals, triggerMessage) {
     return signals.quietParticipantName;
   }
   return inferTargetUser(triggerMessage);
+}
+
+function targetUserIsNotTriggerSender(room, decision) {
+  const trigger = room.messages.find((message) => message.id === decision.triggerMessageId);
+  return Boolean(trigger && decision.targetUser && decision.targetUser !== trigger.senderName);
 }
 
 function wasLikelyInterruption(room, aiMessage) {

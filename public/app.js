@@ -1309,6 +1309,8 @@ function renderAgentReport(agentReport) {
         ${metric("Restraint", agentReport.scorecard.restraint)}
         ${metric("Decision", agentReport.scorecard.decisionImpact)}
         ${metric("Human reply", `${Math.round(agentReport.stats.humanReplyRate * 100)}%`)}
+        ${metric("Reply target", `${Math.round((agentReport.stats.replyTargetRate || 0) * 100)}%`)}
+        ${metric("Wrong person", `${Math.round((agentReport.stats.wrongPersonFeedbackRate || 0) * 100)}%`)}
         ${metric("Selected", agentReport.stats.routingSelectedCount)}
         ${metric("Should speak", formatDecisionVerdict(agentReport.decisionReview && agentReport.decisionReview.shouldHaveSpoken))}
         ${metric("Msg/min", agentReport.stats.averageMessagesPerMinute)}
@@ -1486,11 +1488,18 @@ function renderShapeStats(agentReport) {
         ${metric("Interruption", `${Math.round(stats.interruptionRate * 100)}%`)}
         ${metric("Helped decide", `${Math.round(stats.decisionHelpfulnessRate * 100)}%`)}
         ${metric("Stay quiet", `${Math.round(stats.shouldHaveStayedQuietRate * 100)}%`)}
+        ${metric("Targeted", `${Math.round((stats.targetedDecisionRate || 0) * 100)}%`)}
+        ${metric("Reply target", `${Math.round((stats.replyTargetRate || 0) * 100)}%`)}
+        ${metric("Wrong person", `${Math.round((stats.wrongPersonFeedbackRate || 0) * 100)}%`)}
+        ${metric("Quiet target", `${Math.round((stats.quietParticipantTargetRate || 0) * 100)}%`)}
         ${metric("Human before", stats.humanMessagesBeforeAiMessages)}
         ${metric("Human after", stats.humanMessagesAfterAiMessages)}
         ${metric("Route success", `${Math.round(stats.routingSuccessRate * 100)}%`)}
       </div>
       <div class="tag-list">
+        ${Object.entries(stats.targetUserCounts || {})
+          .map(([name, count]) => `<span class="tag">Target ${escapeHtml(name)} ${count}</span>`)
+          .join("")}
         ${Object.entries(stats.feedbackTagCounts)
           .map(([tag, count]) => `<span class="tag">${formatTag(tag)} ${count}</span>`)
           .join("") || `<span class="tag">No feedback tags</span>`}
@@ -1601,6 +1610,8 @@ function comparisonColumn(title, values) {
       <span>${Number(values.shouldHaveStayedQuietTags || 0)} stay-quiet tags</span>
       <span>${Number(values.tooVerboseTags || 0)} verbose tags</span>
       <span>${Number(values.helpedDecideTags || 0)} helped-decide tags</span>
+      <span>${Math.round(Number(values.replyTargetRate || 0) * 100)}% reply-targeted</span>
+      <span>${Math.round(Number(values.wrongPersonFeedbackRate || 0) * 100)}% wrong-person feedback</span>
       <span>Timing ${escapeHtml(String(values.timingScore || 0))} · Restraint ${escapeHtml(String(values.restraintScore || 0))}</span>
     </div>
   `;

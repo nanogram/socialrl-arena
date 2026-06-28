@@ -134,6 +134,7 @@ assert.ok(
 addFeedback(room, aiMessages[0].id, "too_verbose", "test_user");
 addFeedback(room, aiMessages[0].id, "should_have_stayed_quiet", "test_user");
 addFeedback(room, aiMessages[0].id, "too_assistant_like", "test_user");
+addFeedback(room, aiMessages[0].id, "responded_wrong_person", "test_user");
 addSessionFeedback(
   room,
   {
@@ -180,6 +181,25 @@ assert.ok(Number.isInteger(mediatorReport.scorecard.timing));
 assert.ok(mediatorReport.worstMessages.every((message) => "whatShouldHaveDoneInstead" in message));
 assert.ok(Number.isFinite(mediatorReport.stats.averageMessagesPerMinute));
 assert.ok("routingSuccessRate" in mediatorReport.stats);
+for (const statKey of [
+  "targetedDecisions",
+  "targetedDecisionRate",
+  "replyTargetedMessages",
+  "replyTargetRate",
+  "wrongPersonFeedbackRate",
+  "quietParticipantTargetRate",
+  "targetUserCounts",
+]) {
+  assert.ok(statKey in mediatorReport.stats, `agent stats should include ${statKey}`);
+}
+assert.ok(mediatorReport.stats.replyTargetRate > 0, "AI messages should preserve reply targeting in stats");
+assert.ok(
+  Object.values(mediatorReport.stats.targetUserCounts).some((count) => count > 0),
+  "target user counts should show who decisions were aimed at",
+);
+const firstAiAgentReport = report.agents.find((agent) => agent.agentId === aiMessages[0].agentId);
+assert.ok(firstAiAgentReport.stats.wrongPersonFeedbackRate > 0);
+assert.ok(firstAiAgentReport.failureModes.includes("Wrong person targeting"));
 for (const scoreKey of ["casualScore", "roleplayScore", "adviceScore", "gameNightScore", "debateScore", "supportScore"]) {
   assert.ok(scoreKey in mediatorReport.routingScores, `routing scores should include ${scoreKey}`);
 }
@@ -276,6 +296,10 @@ assert.ok(improvedReport.comparison.every((item) => item.baseline && item.improv
 assert.ok(
   improvedReport.comparison.every((item) => Number.isFinite(item.baseline.totalMessages)),
   "comparison should include baseline side-by-side metrics",
+);
+assert.ok(
+  improvedReport.comparison.every((item) => "replyTargetRate" in item.baseline && "wrongPersonFeedbackRate" in item.baseline),
+  "comparison should include targeting metrics",
 );
 room.activePolicyOverrides = { mediator_v1: improvedReport.agents[0].policyDiff.after };
 room.currentPolicyVersion = `improved_from_${improvedReport.id.slice(0, 8)}`;
