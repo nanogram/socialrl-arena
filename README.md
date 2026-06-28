@@ -26,6 +26,7 @@ Open `http://localhost:3000`.
 npm test
 npm run load-test:smoke
 npm run load-test:target
+npm run load-test:target-artifact
 npm run demo:seed
 npm run preflight
 npm run final-audit
@@ -142,6 +143,7 @@ docker compose exec app npm run migrate:postgres
 - Optional external report judge for Shape Performance Reports
 - Versioned decision/router/message/report judge prompt templates
 - Synthetic WebSocket load test with message acknowledgement, first-token, feedback acknowledgement, report throughput, and socket-stability metrics
+- Machine-readable target-load artifact for final audit
 - Reported p50/p95/p99 fanout, first-token, and full-response latency fields
 - External model fallback failures increment LLM error and timeout metrics in reports
 - Reports include live active-room and process room-count context from the server worker

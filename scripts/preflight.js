@@ -76,6 +76,10 @@ function checkSpecMarkers() {
   const provider = fs.readFileSync("src/llmProvider.js", "utf8");
   const env = fs.readFileSync(".env.example", "utf8");
   const readme = fs.readFileSync("README.md", "utf8");
+  const loadTest = fs.readFileSync("scripts/load-test.js", "utf8");
+  const targetLoad = fs.readFileSync("scripts/run-target-load.js", "utf8");
+  const finalAudit = fs.readFileSync("scripts/final-audit.js", "utf8");
+  const pkg = fs.readFileSync("package.json", "utf8");
 
   for (const [file, body, markers] of [
     ["public/index.html", html, ["debugToggleButton", "displayNameInput", "normalChatBar", "normalSessionFeedback", "replyPreview", "participants", "policies", "routingDecisions"]],
@@ -89,6 +93,10 @@ function checkSpecMarkers() {
     ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
     ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports"]],
+    ["scripts/load-test.js", loadTest, ["LOAD_TEST_OUTPUT_PATH", "passed"]],
+    ["scripts/run-target-load.js", targetLoad, ["SOCIALRL_STORAGE", "target-load-latest.json", "LOAD_TEST_MESSAGES_PER_ROOM"]],
+    ["scripts/final-audit.js", finalAudit, ["targetLoadArtifactChecks", "perf:target-load-artifact"]],
+    ["package.json", pkg, ["load-test:target-artifact"]],
   ]) {
     for (const marker of markers) {
       if (!body.includes(marker)) throw new Error(`${file} missing spec marker: ${marker}`);

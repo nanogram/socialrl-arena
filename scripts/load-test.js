@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const WebSocket = require("ws");
 
 const targetUrl = process.env.LOAD_TEST_URL || "ws://localhost:3000";
@@ -5,6 +7,7 @@ const roomCount = Number(process.env.LOAD_TEST_ROOMS || 20);
 const usersPerRoom = Number(process.env.LOAD_TEST_USERS_PER_ROOM || 3);
 const messagesPerRoom = Number(process.env.LOAD_TEST_MESSAGES_PER_ROOM || 5);
 const scenarioId = process.env.LOAD_TEST_SCENARIO || "weekend_trip";
+const outputPath = process.env.LOAD_TEST_OUTPUT_PATH || "";
 const agentIds = ["mediator_v1", "vibe_friend_v1", "observer_v1"];
 const reportTimeoutMs = Number(process.env.LOAD_TEST_REPORT_TIMEOUT_MS || 15000);
 const interMessageDelayMs = Number(process.env.LOAD_TEST_INTER_MESSAGE_DELAY_MS || 30);
@@ -33,40 +36,6 @@ async function main() {
   await Promise.all(rooms.map((roomId) => exerciseRoom(roomId, metrics)));
   const elapsedMs = Date.now() - startedAt;
 
-  console.log(
-    JSON.stringify(
-      {
-        targetUrl,
-        roomCount,
-        usersPerRoom,
-        messagesPerRoom,
-        aiAgentsSimulated: roomCount * agentIds.length,
-        elapsedMs,
-        messagesSent: metrics.messagesSent,
-        reportsReady: metrics.reportRooms.size,
-        socketsOpened: metrics.sockets,
-        socketCloses: metrics.socketCloses,
-        unexpectedSocketCloses: metrics.unexpectedSocketCloses,
-        snapshots: metrics.snapshots,
-        errors: metrics.errors,
-        messageThroughputPerSecond: round(metrics.messagesSent / Math.max(1, elapsedMs / 1000)),
-        reportThroughputPerSecond: round(metrics.reportRooms.size / Math.max(1, elapsedMs / 1000)),
-        firstTokenSamples: metrics.firstTokenLatencies.length,
-        feedbackSamples: metrics.feedbackAckLatencies.length,
-        p50MessageAckMs: percentile(metrics.messageAckLatencies, 0.5),
-        p95MessageAckMs: percentile(metrics.messageAckLatencies, 0.95),
-        p50FirstTokenLatencyMs: percentile(metrics.firstTokenLatencies, 0.5),
-        p95FirstTokenLatencyMs: percentile(metrics.firstTokenLatencies, 0.95),
-        p50FeedbackAckMs: percentile(metrics.feedbackAckLatencies, 0.5),
-        p95FeedbackAckMs: percentile(metrics.feedbackAckLatencies, 0.95),
-        p50ReportLatencyMs: percentile(metrics.reportLatencies, 0.5),
-        p95ReportLatencyMs: percentile(metrics.reportLatencies, 0.95),
-      },
-      null,
-      2,
-    ),
-  );
-
   const failed =
     metrics.errors ||
     metrics.unexpectedSocketCloses ||
@@ -74,6 +43,44 @@ async function main() {
     metrics.socketCloses !== metrics.sockets ||
     metrics.firstTokenLatencies.length === 0 ||
     metrics.feedbackAckLatencies.length === 0;
+
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    targetUrl,
+    scenarioId,
+    roomCount,
+    usersPerRoom,
+    messagesPerRoom,
+    aiAgentsSimulated: roomCount * agentIds.length,
+    elapsedMs,
+    messagesSent: metrics.messagesSent,
+    reportsReady: metrics.reportRooms.size,
+    socketsOpened: metrics.sockets,
+    socketCloses: metrics.socketCloses,
+    unexpectedSocketCloses: metrics.unexpectedSocketCloses,
+    snapshots: metrics.snapshots,
+    errors: metrics.errors,
+    messageThroughputPerSecond: round(metrics.messagesSent / Math.max(1, elapsedMs / 1000)),
+    reportThroughputPerSecond: round(metrics.reportRooms.size / Math.max(1, elapsedMs / 1000)),
+    firstTokenSamples: metrics.firstTokenLatencies.length,
+    feedbackSamples: metrics.feedbackAckLatencies.length,
+    p50MessageAckMs: percentile(metrics.messageAckLatencies, 0.5),
+    p95MessageAckMs: percentile(metrics.messageAckLatencies, 0.95),
+    p50FirstTokenLatencyMs: percentile(metrics.firstTokenLatencies, 0.5),
+    p95FirstTokenLatencyMs: percentile(metrics.firstTokenLatencies, 0.95),
+    p50FeedbackAckMs: percentile(metrics.feedbackAckLatencies, 0.5),
+    p95FeedbackAckMs: percentile(metrics.feedbackAckLatencies, 0.95),
+    p50ReportLatencyMs: percentile(metrics.reportLatencies, 0.5),
+    p95ReportLatencyMs: percentile(metrics.reportLatencies, 0.95),
+    passed: !failed,
+  };
+
+  if (outputPath) {
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
+  }
+
+  console.log(JSON.stringify(summary, null, 2));
 
   if (failed) process.exit(1);
 }

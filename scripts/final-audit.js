@@ -25,6 +25,7 @@ function main() {
     ...requiredFiles.map((file) => fileCheck(file)),
     gitRemoteCheck(),
     ...latestDemoArtifactChecks(),
+    ...targetLoadArtifactChecks(),
     ...requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label)),
   ];
   const failed = checks.filter((check) => check.status !== "pass");
@@ -260,6 +261,71 @@ function demoExportCheck(exported) {
       ? `${transcript.length} current transcript messages plus ${runs.length} run snapshots exported`
       : "export JSON missing transcript/sender/latency/token/reply/model or before-after run archive evidence",
   };
+}
+
+function targetLoadArtifactChecks() {
+  const artifactPath = process.env.TARGET_LOAD_ARTIFACT || path.join("demo-artifacts", "target-load-latest.json");
+  if (!fs.existsSync(artifactPath)) {
+    return [
+      {
+        name: "perf:target-load-artifact",
+        status: "fail",
+        detail: `run npm run load-test:target-artifact to create ${artifactPath}`,
+      },
+    ];
+  }
+
+  let result;
+  try {
+    result = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  } catch (error) {
+    return [
+      {
+        name: "perf:target-load-artifact",
+        status: "fail",
+        detail: `invalid JSON in ${artifactPath}: ${error.message}`,
+      },
+    ];
+  }
+
+  const fresh = artifactFreshAfterHead(artifactPath);
+  const ok =
+    result.passed === true &&
+    result.roomCount >= 100 &&
+    result.usersPerRoom >= 3 &&
+    result.messagesSent >= 1000 &&
+    result.aiAgentsSimulated >= 300 &&
+    result.reportsReady === result.roomCount &&
+    result.socketsOpened >= 300 &&
+    result.socketCloses === result.socketsOpened &&
+    result.unexpectedSocketCloses === 0 &&
+    result.errors === 0 &&
+    result.firstTokenSamples > 0 &&
+    result.feedbackSamples >= result.roomCount &&
+    Number.isFinite(result.p95MessageAckMs) &&
+    Number.isFinite(result.p95FirstTokenLatencyMs) &&
+    Number.isFinite(result.p95FeedbackAckMs) &&
+    Number.isFinite(result.p95ReportLatencyMs);
+
+  return [
+    {
+      name: "perf:target-load-artifact",
+      status: ok ? "pass" : "fail",
+      detail: ok
+        ? `${result.roomCount} rooms, ${result.messagesSent} messages, ${result.socketsOpened} sockets, ${result.reportsReady} reports`
+        : "target load artifact does not prove 100 rooms, 300 users, 300 AI agents, 1000 messages, reports, first-token, feedback, and clean socket closure",
+    },
+    {
+      name: "perf:fresh-after-head",
+      status: fresh ? "pass" : "fail",
+      detail: fresh ? "target load artifact was generated after the current commit" : "rerun npm run load-test:target-artifact",
+    },
+  ];
+}
+
+function artifactFreshAfterHead(artifactPath) {
+  const commitMs = Number(execFileSync("git", ["log", "-1", "--format=%ct"], { encoding: "utf8" }).trim()) * 1000;
+  return fs.statSync(artifactPath).mtimeMs >= commitMs;
 }
 
 function latest(items) {
