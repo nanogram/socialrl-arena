@@ -1044,6 +1044,7 @@ function buildAgentReport(room, agent) {
   const scorecard = buildScorecard(stats, tagCounts, messages.length);
   const bestMessages = pickMessages(room.messages, messages, "positive");
   const worstMessages = pickMessages(room.messages, messages, "negative");
+  const decisionReview = buildDecisionReview(room, agent, decisions, messages, stats, tagCounts);
 
   return {
     agentId: agent.id,
@@ -1057,6 +1058,7 @@ function buildAgentReport(room, agent) {
     summary: summarizeAgent(agent, stats, scorecard),
     scorecard,
     stats,
+    decisionReview,
     routingScores: buildAgentRoutingScores(agent, scorecard, stats, room),
     failureModes: inferFailureModes(stats, tagCounts),
     bestMessages,
@@ -1266,6 +1268,110 @@ function summarizeAgent(agent, stats, scorecard) {
     return `${agent.name} helped move the room toward a decision while keeping participation measurable.`;
   }
   return `${agent.name} participated ${stats.totalMessages} time(s); more feedback is needed to prove consistent value.`;
+}
+
+function buildDecisionReview(room, agent, decisions, messages, stats, tagCounts) {
+  const selectedByRouterCount = decisions.filter(
+    (decision) => decision.route && decision.route.selectedAgentId === agent.id,
+  ).length;
+  return {
+    shouldHaveSpoken: judgeShouldHaveSpoken(stats, tagCounts, decisions),
+    summary: summarizeDecisionReview(agent, stats, tagCounts, decisions, selectedByRouterCount),
+    totalDecisions: decisions.length,
+    speakDecisions: stats.speakDecisions,
+    waitDecisions: stats.waitDecisions,
+    staySilentDecisions: stats.staySilentDecisions,
+    selectedByRouterCount,
+    groupStateCounts: countBy(decisions, "groupState"),
+    sampledDecisions: decisions.slice(-6).map((decision) =>
+      decisionReviewEntry(room, decision, messages.find((message) => message.decisionId === decision.id)),
+    ),
+  };
+}
+
+function judgeShouldHaveSpoken(stats, tagCounts, decisions) {
+  if (!decisions.length) return "insufficient_evidence";
+  if (!stats.totalMessages) return "not_tested";
+  const explicitlyPositive =
+    stats.positiveFeedbackRate > stats.negativeFeedbackRate ||
+    stats.decisionHelpfulnessRate > 0.3 ||
+    tagCounts.good_timing ||
+    tagCounts.revived_dead_chat ||
+    tagCounts.reduced_tension;
+  if (
+    stats.shouldHaveStayedQuietRate > 0.2 ||
+    tagCounts.interrupted_humans ||
+    tagCounts.responded_too_often ||
+    (stats.interruptionRate > 0.25 && !explicitlyPositive)
+  ) {
+    return "no";
+  }
+  if (explicitlyPositive) {
+    return "yes";
+  }
+  return "mixed";
+}
+
+function summarizeDecisionReview(agent, stats, tagCounts, decisions, selectedByRouterCount) {
+  if (!decisions.length) {
+    return `${agent.name} has not been evaluated by the participation policy yet.`;
+  }
+  if (!stats.totalMessages) {
+    return `${agent.name} mostly held back across ${decisions.length} decision(s); usefulness is still unproven because it did not send a message.`;
+  }
+  const explicitlyPositive =
+    stats.positiveFeedbackRate > stats.negativeFeedbackRate ||
+    stats.decisionHelpfulnessRate > 0.3 ||
+    tagCounts.good_timing ||
+    tagCounts.revived_dead_chat ||
+    tagCounts.reduced_tension;
+  if (
+    stats.shouldHaveStayedQuietRate > 0.2 ||
+    tagCounts.interrupted_humans ||
+    tagCounts.responded_too_often ||
+    (stats.interruptionRate > 0.25 && !explicitlyPositive)
+  ) {
+    return `${agent.name} spoke in moments that feedback marked as risky, so similar rooms should raise its speak threshold.`;
+  }
+  if (explicitlyPositive) {
+    return `${agent.name} had evidence-backed speak decisions: ${selectedByRouterCount} router selection(s) and useful/timing feedback support routing it again.`;
+  }
+  return `${agent.name} has mixed participation evidence; keep decisions visible and require stronger feedback before changing routing priority.`;
+}
+
+function decisionReviewEntry(room, decision, responseMessage) {
+  const trigger = room.messages.find((message) => message.id === decision.triggerMessageId) || null;
+  const feedback = responseMessage ? responseMessage.feedback || [] : [];
+  return {
+    decisionId: decision.id,
+    triggerMessageId: decision.triggerMessageId,
+    triggerSender: trigger ? trigger.senderName : null,
+    triggerText: trigger ? truncateText(trigger.content, 160) : null,
+    decision: decision.decision,
+    targetUser: decision.targetUser || null,
+    reason: decision.reason,
+    confidence: round(Number(decision.confidence || 0)),
+    groupState: decision.groupState,
+    selectedByRouter: Boolean(decision.route && decision.route.selectedAgentId === decision.agentId),
+    routeSelectedAgentId: decision.route ? decision.route.selectedAgentId || null : null,
+    routeReason: decision.route ? decision.route.reason || null : null,
+    ruleAdjustments: decision.ruleAdjustments || [],
+    outcome: responseMessage
+      ? {
+          messageId: responseMessage.id,
+          messageText: truncateText(responseMessage.content, 180),
+          feedbackTags: feedback.map((entry) => entry.tag),
+          positiveFeedback: feedback.filter((entry) => entry.sentiment === "positive").length,
+          negativeFeedback: feedback.filter((entry) => entry.sentiment === "negative").length,
+        }
+      : {
+          messageId: null,
+          messageText: null,
+          feedbackTags: [],
+          positiveFeedback: 0,
+          negativeFeedback: 0,
+        },
+  };
 }
 
 function summarizeSession(agentReports, room) {
@@ -1755,6 +1861,12 @@ function countWords(text) {
     .trim()
     .split(/\s+/)
     .filter(Boolean).length;
+}
+
+function truncateText(text, maxLength) {
+  const value = String(text || "").trim();
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, Math.max(0, maxLength - 1))}...`;
 }
 
 function round(value) {

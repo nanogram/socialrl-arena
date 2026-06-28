@@ -494,10 +494,10 @@ async function insertReports(client, reports) {
         `
           insert into agent_reports (
             id, room_id, agent_id, session_number, policy_mode, summary, scorecard,
-            stats, failure_modes, best_messages, worst_messages, routing_scores,
+            stats, decision_review, failure_modes, best_messages, worst_messages, routing_scores,
             policy_diff, routing_recommendation, created_at
           )
-          values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15)
+          values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16)
         `,
         [
           `${report.id}:${agentReport.agentId}`,
@@ -508,6 +508,7 @@ async function insertReports(client, reports) {
           agentReport.summary,
           JSON.stringify(agentReport.scorecard),
           JSON.stringify(agentReport.stats),
+          JSON.stringify(agentReport.decisionReview || {}),
           JSON.stringify(agentReport.failureModes),
           JSON.stringify(agentReport.bestMessages),
           JSON.stringify(agentReport.worstMessages),

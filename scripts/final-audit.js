@@ -148,6 +148,12 @@ function demoReportCheck(exported) {
     performance.roomsTracked !== undefined &&
     performance.p99FirstTokenLatencyMs !== undefined &&
     performance.p99FullResponseLatencyMs !== undefined &&
+    agentReports.every(
+      (agent) =>
+        agent.decisionReview &&
+        agent.decisionReview.shouldHaveSpoken &&
+        Array.isArray(agent.decisionReview.sampledDecisions),
+    ) &&
     agentReports.every((agent) => agent.routingScores && agent.routingRecommendation) &&
     agentReports.some(
       (agent) => agent.routingRecommendation && agent.routingRecommendation.sessionFeedback,
@@ -157,8 +163,8 @@ function demoReportCheck(exported) {
     name: "demo:report-contract",
     status: ok ? "pass" : "fail",
     detail: ok
-      ? `${agentReports.length} agent reports include routing/performance evidence`
-      : "latest report missing agent selection rules, routing feedback, routing scores, or system performance fields",
+      ? `${agentReports.length} agent reports include routing, performance, and decision-review evidence`
+      : "latest report missing agent selection rules, decision review, routing feedback, routing scores, or system performance fields",
   };
 }
 

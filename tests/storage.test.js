@@ -5,6 +5,7 @@ const path = require("path");
 const {
   addHumanMessage,
   addSessionFeedback,
+  buildReport,
   createAgentDecisions,
   createAgentPlaceholder,
   createRoom,
@@ -50,6 +51,8 @@ async function main() {
     },
     "test-user",
   );
+  const report = buildReport(room);
+  assert.ok(report.agents.every((agentReport) => agentReport.decisionReview));
   room.activePolicyOverrides = {
     observer_v1: "Speak only when the quiet participant needs to be included.",
   };
@@ -119,6 +122,14 @@ async function main() {
   assert.ok(sessionFeedbackWrite);
   assert.ok(sessionFeedbackWrite.sql.includes("route_next_agent_id"));
   assert.ok(sessionFeedbackWrite.params.includes("observer_v1"));
+  const agentReportWrite = fakeClient.queries.find((entry) =>
+    entry.sql.startsWith("insert into agent_reports"),
+  );
+  assert.ok(agentReportWrite);
+  assert.ok(agentReportWrite.sql.includes("decision_review"));
+  const persistedDecisionReview = JSON.parse(agentReportWrite.params[8]);
+  assert.ok(persistedDecisionReview.summary);
+  assert.ok(Array.isArray(persistedDecisionReview.sampledDecisions));
   assert.ok(writtenTables.some((sql) => sql.startsWith("delete from participants")));
   const participantWrites = fakeClient.queries.filter((entry) =>
     entry.sql.startsWith("insert into participants"),

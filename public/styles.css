@@ -812,6 +812,23 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   margin: 4px 0 0;
 }
 
+.decision-review-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.decision-review-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px;
+  background: #f8fbfa;
+}
+
+.decision-review-item p {
+  margin-top: 6px;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

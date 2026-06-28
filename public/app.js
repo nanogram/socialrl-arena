@@ -775,6 +775,7 @@ function renderShapePage(agentId) {
         </div>
       </article>
       ${renderShapeStats(shape)}
+      ${renderDecisionReview(shape.decisionReview)}
       ${renderFailureModeCard(shape)}
       <article class="report-card">
         <div class="report-title"><strong>Policy Diff</strong></div>
@@ -1170,6 +1171,7 @@ function renderAgentReport(agentReport) {
         ${metric("Decision", agentReport.scorecard.decisionImpact)}
         ${metric("Human reply", `${Math.round(agentReport.stats.humanReplyRate * 100)}%`)}
         ${metric("Selected", agentReport.stats.routingSelectedCount)}
+        ${metric("Should speak", formatDecisionVerdict(agentReport.decisionReview && agentReport.decisionReview.shouldHaveSpoken))}
         ${metric("Msg/min", agentReport.stats.averageMessagesPerMinute)}
         ${metric("Route success", `${Math.round(agentReport.stats.routingSuccessRate * 100)}%`)}
       </div>
@@ -1193,6 +1195,7 @@ function renderExpandedAgentReport(agentReport) {
       <p><strong>Policy rationale:</strong> ${escapeHtml(agentReport.policyDiff.rationale)}</p>
       ${renderRoutingScores(agentReport.routingScores)}
     </article>
+    ${renderDecisionReview(agentReport.decisionReview)}
   `;
 }
 
@@ -1216,6 +1219,69 @@ function renderRoutingFeedbackVotes(feedback = {}) {
       ${metric("Route votes", feedback.routeNextVotes || 0)}
       ${metric("Useful votes", feedback.mostUsefulVotes || 0)}
       ${metric("Annoying votes", feedback.mostAnnoyingVotes || 0)}
+    </div>
+  `;
+}
+
+function renderDecisionReview(review) {
+  if (!review) return "";
+  const entries = Array.isArray(review.sampledDecisions) ? review.sampledDecisions : [];
+  return `
+    <article class="report-card decision-review-card">
+      <div class="report-title"><strong>Participation Decision Review</strong></div>
+      <p>${escapeHtml(review.summary || "No decision review captured yet.")}</p>
+      <div class="metric-grid">
+        ${metric("Should speak", formatDecisionVerdict(review.shouldHaveSpoken))}
+        ${metric("Decisions", review.totalDecisions || 0)}
+        ${metric("Speak", review.speakDecisions || 0)}
+        ${metric("Wait", review.waitDecisions || 0)}
+        ${metric("Silent", review.staySilentDecisions || 0)}
+        ${metric("Routed", review.selectedByRouterCount || 0)}
+      </div>
+      ${renderGroupStateCounts(review.groupStateCounts)}
+      <div class="decision-review-list">
+        ${entries.map(renderDecisionReviewEntry).join("") || `<p>No sampled decisions yet.</p>`}
+      </div>
+    </article>
+  `;
+}
+
+function renderGroupStateCounts(counts = {}) {
+  const entries = Object.entries(counts || {});
+  if (!entries.length) return "";
+  return `
+    <div class="tag-list">
+      ${entries.map(([state, count]) => `<span class="tag">${formatTag(state)} ${count}</span>`).join("")}
+    </div>
+  `;
+}
+
+function renderDecisionReviewEntry(entry) {
+  const adjustments = Array.isArray(entry.ruleAdjustments) ? entry.ruleAdjustments : [];
+  const tags = entry.outcome && Array.isArray(entry.outcome.feedbackTags) ? entry.outcome.feedbackTags : [];
+  return `
+    <div class="decision-review-item">
+      <div class="decision-top">
+        <span class="badge ${escapeHtml(entry.decision)}">${escapeHtml(formatDecision(entry.decision || "unknown"))}</span>
+        <span>${Math.round(Number(entry.confidence || 0) * 100)}% · ${escapeHtml(entry.groupState || "active")}</span>
+      </div>
+      <p><strong>${escapeHtml(entry.triggerSender || "Trigger")}:</strong> ${escapeHtml(entry.triggerText || "No trigger captured.")}</p>
+      <p>${escapeHtml(entry.reason || "No reason captured.")}</p>
+      ${
+        entry.targetUser
+          ? `<p><strong>Target:</strong> ${escapeHtml(entry.targetUser)}</p>`
+          : ""
+      }
+      <p><strong>Router:</strong> ${entry.selectedByRouter ? "selected" : "not selected"}${entry.routeReason ? ` · ${escapeHtml(entry.routeReason)}` : ""}</p>
+      ${
+        entry.outcome && entry.outcome.messageText
+          ? `<p><strong>Message:</strong> ${escapeHtml(entry.outcome.messageText)}</p>`
+          : ""
+      }
+      <div class="tag-list">
+        ${adjustments.map((adjustment) => `<span class="tag">${escapeHtml(adjustment)}</span>`).join("")}
+        ${tags.map((tag) => `<span class="tag">${formatTag(tag)}</span>`).join("")}
+      </div>
     </div>
   `;
 }
@@ -1485,7 +1551,18 @@ function formatPercentValue(value) {
 }
 
 function formatDecision(decision) {
-  return decision.replace("_", " ");
+  return String(decision || "").replace("_", " ");
+}
+
+function formatDecisionVerdict(value) {
+  const labels = {
+    yes: "Yes",
+    no: "No",
+    mixed: "Mixed",
+    not_tested: "Not tested",
+    insufficient_evidence: "Insufficient",
+  };
+  return labels[value] || "Unknown";
 }
 
 function formatTag(tag) {

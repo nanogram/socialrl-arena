@@ -141,6 +141,18 @@ assert.ok(Number.isInteger(mediatorReport.scorecard.timing));
 assert.ok(mediatorReport.worstMessages.every((message) => "whatShouldHaveDoneInstead" in message));
 assert.ok(Number.isFinite(mediatorReport.stats.averageMessagesPerMinute));
 assert.ok("routingSuccessRate" in mediatorReport.stats);
+assert.ok(mediatorReport.decisionReview, "agent report should include participation decision review");
+assert.ok(["yes", "no", "mixed", "not_tested", "insufficient_evidence"].includes(mediatorReport.decisionReview.shouldHaveSpoken));
+assert.equal(
+  mediatorReport.decisionReview.totalDecisions,
+  room.decisions.filter((decision) => decision.agentId === "mediator_v1").length,
+);
+assert.ok(Array.isArray(mediatorReport.decisionReview.sampledDecisions));
+assert.ok(
+  mediatorReport.decisionReview.sampledDecisions.every(
+    (decision) => decision.decisionId && decision.triggerMessageId && "selectedByRouter" in decision,
+  ),
+);
 assert.ok(mediatorReport.routingScores.planningScore >= 0);
 for (const key of [
   "activeRooms",
