@@ -75,6 +75,7 @@ function checkSpecMarkers() {
   const render = fs.readFileSync("render.yaml", "utf8");
   const provider = fs.readFileSync("src/llmProvider.js", "utf8");
   const env = fs.readFileSync(".env.example", "utf8");
+  const readme = fs.readFileSync("README.md", "utf8");
 
   for (const [file, body, markers] of [
     ["public/index.html", html, ["debugToggleButton", "displayNameInput", "normalChatBar", "normalSessionFeedback", "replyPreview", "participants", "policies", "routingDecisions"]],
@@ -87,6 +88,7 @@ function checkSpecMarkers() {
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "recordProviderFailure", "routerModelName"]],
     ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
+    ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports"]],
   ]) {
     for (const marker of markers) {
       if (!body.includes(marker)) throw new Error(`${file} missing spec marker: ${marker}`);

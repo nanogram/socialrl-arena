@@ -168,11 +168,23 @@ Operational APIs:
 
 ```mermaid
 flowchart LR
-  Browser["Browser UI"] <--> WS["Node WebSocket server"]
-  WS --> Core["Agent decision + report core"]
-  Core --> Store["File storage or Postgres snapshot"]
-  Core --> Room["In-memory multi-room cache"]
-  Core --> Report["Shape Performance Report"]
+  Browser["Browser SPA\nlanding, create, chat, report, Shape review"] <--> WS["Node WebSocket + HTTP server"]
+  WS --> Rooms["In-memory multi-room cache"]
+  WS --> Core["Agent orchestration core"]
+  Core --> Decisions["Speak / wait / stay-silent decisions"]
+  Core --> Router["Rule + optional model-assisted router"]
+  Router --> ModelPlan["Per-stage model routing evidence"]
+  Core --> Stream["Streaming AI response simulation"]
+  Core --> Feedback["Message + session feedback"]
+  Core --> Reports["Shape Performance Reports\npolicy diff + before/after comparison"]
+  WS --> Queue["Report queue + worker"]
+  Queue --> Reports
+  WS --> Export["Transcript/report JSON export"]
+  WS --> Store["File storage or Postgres"]
+  Store --> Snapshot["Full room snapshots"]
+  Store --> Tables["Normalized messages, decisions, routing, feedback, reports"]
+  Core --> Providers["Local deterministic agents\nOpenAI Responses\nGeneric HTTP LLM"]
+  Load["Synthetic WebSocket load test"] --> WS
 ```
 
 ## Next Implementation Steps
