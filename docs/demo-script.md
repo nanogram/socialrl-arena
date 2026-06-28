@@ -4,7 +4,7 @@
 
 1. Open `/rooms/demo-room`.
 2. Optionally open `/` first to show the landing page, then use `/create` for room setup.
-3. Select `Weekend Trip Planning`.
+3. Show the scenario list, which covers planning, conflict, casual hangout, fandom/RP, study/work, advice, game night, debate, and support/emotional rooms, then select `Weekend Trip Planning`.
 4. Keep all three agents enabled.
 5. Click `Run Sample`.
 

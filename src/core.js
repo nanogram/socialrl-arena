@@ -40,6 +40,84 @@ const scenarios = [
       ["Rae", "I just want one option that works for everyone."],
     ],
   },
+  {
+    id: "casual_hangout",
+    title: "Casual Hangout",
+    roomType: "casual_hangout",
+    premise:
+      "Friends are chatting with no fixed agenda. The useful AI move is usually restraint, light energy, or reviving a lull.",
+    sampleScript: [
+      ["Alex", "I have no plan tonight, just kind of hanging around."],
+      ["Jules", "Same. My brain is oatmeal after work."],
+      ["Sam", "We could do a low-effort movie or just keep the chat alive."],
+      ["Taylor", "Anyone have a tiny idea that does not become a whole project?"],
+    ],
+  },
+  {
+    id: "fandom_rp",
+    title: "Fandom / RP Scene",
+    roomType: "fandom_rp",
+    premise:
+      "A playful fandom roleplay thread needs vibe matching without the AI flattening the bit or taking over.",
+    sampleScript: [
+      ["Mina", "The spaceship kitchen is somehow haunted by soup again."],
+      ["Dev", "Captain says this is definitely not in the mission briefing."],
+      ["Noor", "I want to keep the bit going but not derail the whole scene."],
+      ["Mina", "What is the funniest next beat without overexplaining it?"],
+    ],
+  },
+  {
+    id: "advice_spiral",
+    title: "Advice Spiral",
+    roomType: "advice",
+    premise:
+      "A friend is asking for advice while the group risks giving too many options instead of one clarifying question.",
+    sampleScript: [
+      ["Rae", "I am not sure whether to text back tonight or wait until tomorrow."],
+      ["Cam", "I can see both sides and now I am overthinking it too."],
+      ["Lee", "What is the actual thing you want to avoid happening?"],
+      ["Rae", "I need advice, but not a giant list of possibilities."],
+    ],
+  },
+  {
+    id: "game_night",
+    title: "Game Night Setup",
+    roomType: "game_night",
+    premise:
+      "A group is picking a game for the night. The AI should keep energy up while helping the group converge quickly.",
+    sampleScript: [
+      ["Alex", "We need something fast because people are joining at different times."],
+      ["Jules", "I vote chaos, but not a three-hour rules explanation."],
+      ["Sam", "Can we pick between party game, co-op, or trivia?"],
+      ["Taylor", "If we do not decide soon, we will just talk about games all night."],
+    ],
+  },
+  {
+    id: "debate_prep",
+    title: "Debate Prep",
+    roomType: "debate",
+    premise:
+      "People are debating a decision and need clearer arguments without the AI escalating or declaring fake consensus.",
+    sampleScript: [
+      ["Mina", "I think the launch should wait until the data is cleaner."],
+      ["Dev", "Waiting costs momentum. We can ship and patch."],
+      ["Noor", "Both arguments sound reasonable, which is not helping."],
+      ["Mina", "Can someone separate the strongest argument on each side?"],
+    ],
+  },
+  {
+    id: "support_checkin",
+    title: "Support Check-in",
+    roomType: "support_emotional",
+    premise:
+      "A friend is having a rough moment. The AI should use high restraint, avoid jokes, and support human-to-human care.",
+    sampleScript: [
+      ["Rae", "I am overwhelmed and I do not really know what I need."],
+      ["Cam", "I am here. Do you want distraction or practical help?"],
+      ["Lee", "No pressure to explain everything right now."],
+      ["Rae", "I think I just need this to feel less lonely."],
+    ],
+  },
 ];
 
 const defaultScenarioId = "weekend_trip";
@@ -670,7 +748,7 @@ function applyRoutingPolicy(room, signals, rawDecisions) {
 function pickRoutedWinner(room, signals, candidates) {
   if (!candidates.length) return null;
 
-  if (signals.tension || signals.emotionallySensitive || signals.chaotic) {
+  if (signals.tension || signals.emotionallySensitive || signals.chaotic || room.scenario.roomType === "support_emotional") {
     return (
       candidates.find((decision) => decision.agentId === "observer_v1") ||
       candidates.find((decision) => decision.agentId === "mediator_v1") ||
@@ -680,6 +758,18 @@ function pickRoutedWinner(room, signals, candidates) {
 
   if (room.scenario.roomType === "planning" && signals.decisionNeeded) {
     return candidates.find((decision) => decision.agentId === "mediator_v1") || candidates[0];
+  }
+
+  if (["casual_hangout", "fandom_rp", "game_night"].includes(room.scenario.roomType) && !signals.decisionNeeded) {
+    return candidates.find((decision) => decision.agentId === "vibe_friend_v1") || candidates[0];
+  }
+
+  if (["advice", "debate"].includes(room.scenario.roomType)) {
+    return (
+      candidates.find((decision) => decision.agentId === "observer_v1") ||
+      candidates.find((decision) => decision.agentId === "mediator_v1") ||
+      candidates[0]
+    );
   }
 
   if (signals.playful) {
@@ -694,6 +784,9 @@ function pickRoutedWinner(room, signals, candidates) {
 }
 
 function routingReasonForWinner(room, signals, winner) {
+  if (room.scenario.roomType === "support_emotional" && ["observer_v1", "mediator_v1"].includes(winner.agentId)) {
+    return `${winner.agentName} was routed because support rooms need careful, low-pressure participation.`;
+  }
   if (signals.tension && ["observer_v1", "mediator_v1"].includes(winner.agentId)) {
     return `${winner.agentName} was routed because tense rooms need low-ego mediation, not extra social energy.`;
   }
@@ -709,6 +802,12 @@ function routingReasonForWinner(room, signals, winner) {
   if (signals.playful && winner.agentId === "vibe_friend_v1") {
     return "Vibe Friend was routed because the room was playful and its confidence cleared the social-energy threshold.";
   }
+  if (["casual_hangout", "fandom_rp", "game_night"].includes(room.scenario.roomType) && winner.agentId === "vibe_friend_v1") {
+    return `${winner.agentName} was routed because this room type rewards light social energy and vibe matching.`;
+  }
+  if (["advice", "debate"].includes(room.scenario.roomType) && ["observer_v1", "mediator_v1"].includes(winner.agentId)) {
+    return `${winner.agentName} was routed because this room type needs careful framing instead of extra noise.`;
+  }
   if ((signals.stalled || signals.lowEnergy) && winner.agentId === "vibe_friend_v1") {
     return "Vibe Friend was routed because a stalled room needed low-stakes energy.";
   }
@@ -719,12 +818,13 @@ function buildModelRoutingPlan(room, signals, winner) {
   const highStakesResponse =
     Boolean(signals.emotionallySensitive) ||
     Boolean(signals.tension) ||
-    room.scenario.roomType === "drama_conflict";
+    ["drama_conflict", "support_emotional", "advice"].includes(room.scenario.roomType);
   const nuancedPolicyRepair =
     highStakesResponse || Boolean(signals.chaotic) || room.policyMode === "improved";
   const escalationReasons = [];
 
   if (signals.emotionallySensitive) escalationReasons.push("emotionally sensitive response");
+  if (room.scenario.roomType === "support_emotional") escalationReasons.push("support/emotional room");
   if (signals.tension) escalationReasons.push("conflict mediation");
   if (signals.chaotic) escalationReasons.push("chaotic thread repair");
   if (room.policyMode === "improved") escalationReasons.push("policy repair loop");
@@ -832,9 +932,13 @@ function decideForAgent(agent, room, triggerMessage) {
   const reasons = [];
 
   if (agent.id === "mediator_v1") {
-    if (signals.decisionNeeded) {
+    if (signals.decisionNeeded || ["debate", "game_night"].includes(room.scenario.roomType)) {
       confidence += improved ? 0.5 : 0.36;
-      reasons.push("the room needs a concrete decision");
+      reasons.push(
+        room.scenario.roomType === "debate"
+          ? "the debate needs clearer tradeoffs"
+          : "the room needs a concrete decision",
+      );
     }
     if (signals.constraints.length >= 2) {
       confidence += improved ? 0.28 : 0.22;
@@ -865,9 +969,9 @@ function decideForAgent(agent, room, triggerMessage) {
   }
 
   if (agent.id === "vibe_friend_v1") {
-    if (signals.playful || signals.derailed) {
+    if (signals.playful || signals.derailed || ["casual_hangout", "fandom_rp", "game_night"].includes(room.scenario.roomType)) {
       confidence += improved ? 0.32 : 0.38;
-      reasons.push("the group is in a playful or derailing moment");
+      reasons.push("the room needs social energy or vibe matching");
     }
     if (signals.lowEnergy) {
       confidence += improved ? 0.36 : 0.18;
@@ -895,12 +999,14 @@ function decideForAgent(agent, room, triggerMessage) {
   }
 
   if (agent.id === "observer_v1") {
-    if (signals.tension || signals.emotionallySensitive) {
+    if (signals.tension || signals.emotionallySensitive || ["support_emotional", "advice", "debate"].includes(room.scenario.roomType)) {
       confidence += improved ? 0.52 : 0.38;
       reasons.push(
-        signals.emotionallySensitive
+        room.scenario.roomType === "support_emotional" || signals.emotionallySensitive
           ? "the room is emotionally sensitive"
-          : "tension needs a low-ego intervention",
+          : room.scenario.roomType === "advice"
+            ? "advice needs a careful clarifying question"
+            : "tension needs a low-ego intervention",
       );
     }
     if (signals.chaotic) {
@@ -1851,7 +1957,9 @@ function buildRoutingRecommendationReason(baseReason, feedbackVotes) {
 function buildAgentRoutingScores(agent, scorecard, stats, room) {
   const roomFitBonus =
     (room.scenario.roomType === "planning" && agent.id === "mediator_v1") ||
-    (room.scenario.roomType === "drama_conflict" && agent.id === "observer_v1") ||
+    (["drama_conflict", "support_emotional", "advice", "debate"].includes(room.scenario.roomType) && agent.id === "observer_v1") ||
+    (["debate", "game_night"].includes(room.scenario.roomType) && agent.id === "mediator_v1") ||
+    (["casual_hangout", "fandom_rp", "game_night"].includes(room.scenario.roomType) && agent.id === "vibe_friend_v1") ||
     (room.currentGroupState === "playful" && agent.id === "vibe_friend_v1")
       ? 0.12
       : 0;
@@ -1870,6 +1978,36 @@ function buildAgentRoutingScores(agent, scorecard, stats, room) {
     ),
     funScore: boundedProbability(
       (agent.id === "vibe_friend_v1" ? 0.5 : 0.18) + scorecard.fun / 10 - stats.negativeFeedbackRate / 5,
+    ),
+    casualScore: boundedProbability(
+      (agent.id === "vibe_friend_v1" ? 0.5 : agent.id === "observer_v1" ? 0.24 : 0.18) +
+        scorecard.fun / 12 +
+        (room.scenario.roomType === "casual_hangout" ? roomFitBonus : 0),
+    ),
+    roleplayScore: boundedProbability(
+      (agent.id === "vibe_friend_v1" ? 0.48 : 0.18) +
+        scorecard.personalityConsistency / 12 +
+        (room.scenario.roomType === "fandom_rp" ? roomFitBonus : 0),
+    ),
+    adviceScore: boundedProbability(
+      (agent.id === "observer_v1" ? 0.48 : agent.id === "mediator_v1" ? 0.3 : 0.12) +
+        scorecard.socialAwareness / 10 +
+        (room.scenario.roomType === "advice" ? roomFitBonus : 0),
+    ),
+    gameNightScore: boundedProbability(
+      (agent.id === "vibe_friend_v1" ? 0.4 : agent.id === "mediator_v1" ? 0.34 : 0.18) +
+        (scorecard.fun + scorecard.decisionImpact) / 20 +
+        (room.scenario.roomType === "game_night" ? roomFitBonus : 0),
+    ),
+    debateScore: boundedProbability(
+      (agent.id === "observer_v1" ? 0.42 : agent.id === "mediator_v1" ? 0.38 : 0.1) +
+        (scorecard.socialAwareness + scorecard.decisionImpact) / 20 +
+        (room.scenario.roomType === "debate" ? roomFitBonus : 0),
+    ),
+    supportScore: boundedProbability(
+      (agent.id === "observer_v1" ? 0.52 : agent.id === "mediator_v1" ? 0.28 : 0.08) +
+        (scorecard.socialAwareness + scorecard.restraint) / 20 +
+        (room.scenario.roomType === "support_emotional" ? roomFitBonus : 0),
     ),
     restraintScore: boundedProbability(scorecard.restraint / 5 - stats.shouldHaveStayedQuietRate / 3),
     personalityConsistency: boundedProbability(scorecard.personalityConsistency / 5),

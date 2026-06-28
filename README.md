@@ -99,7 +99,7 @@ docker compose exec app npm run migrate:postgres
 - Join/update a display name and see active human participants plus selected AI Shapes
 - Invite links
 - Scenario selection
-- Weekend Trip Planning, Group Project Triage, and Friend Group Conflict scenarios
+- Nine scenarios covering planning, drama/conflict, casual hangout, fandom/RP, study/work, advice, game night, debate, and support/emotional rooms
 - Three agents: Mediator, Vibe Friend, and Observer
 - Room setup enforces 2-3 selected AI Shapes per session
 - WebSocket fanout

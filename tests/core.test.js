@@ -17,6 +17,7 @@ const {
   refreshLatestReport,
   resetRoomForNextRun,
   routeAgentDecisions,
+  scenarios,
   setRoomConfig,
 } = require("../src/core");
 const { buildAgentDecisionPrompt, buildRouterPrompt } = require("../src/prompts");
@@ -60,6 +61,22 @@ function makeDecision(room, triggerMessage, agentId, input = {}) {
 const room = createRoom("test-room");
 assert.equal(getRoomAgents(room).length, 3, "default room should include three spec agents");
 assert.deepEqual(agentSelectionRules, { min: 2, max: 3 });
+for (const roomType of [
+  "planning",
+  "drama_conflict",
+  "casual_hangout",
+  "fandom_rp",
+  "study_work",
+  "advice",
+  "game_night",
+  "debate",
+  "support_emotional",
+]) {
+  assert.ok(
+    scenarios.some((scenario) => scenario.roomType === roomType),
+    `scenario catalog should cover ${roomType}`,
+  );
+}
 
 const replyRoom = createRoom("reply-room");
 const replyRoot = addHumanMessage(replyRoom, "Alex", "Cheap is the constraint.");
@@ -163,6 +180,9 @@ assert.ok(Number.isInteger(mediatorReport.scorecard.timing));
 assert.ok(mediatorReport.worstMessages.every((message) => "whatShouldHaveDoneInstead" in message));
 assert.ok(Number.isFinite(mediatorReport.stats.averageMessagesPerMinute));
 assert.ok("routingSuccessRate" in mediatorReport.stats);
+for (const scoreKey of ["casualScore", "roleplayScore", "adviceScore", "gameNightScore", "debateScore", "supportScore"]) {
+  assert.ok(scoreKey in mediatorReport.routingScores, `routing scores should include ${scoreKey}`);
+}
 assert.ok(mediatorReport.decisionReview, "agent report should include participation decision review");
 assert.ok(["yes", "no", "mixed", "not_tested", "insufficient_evidence"].includes(mediatorReport.decisionReview.shouldHaveSpoken));
 assert.equal(
@@ -383,6 +403,27 @@ assert.equal(
   emotionalDecisions.find((decision) => decision.agentId === "vibe_friend_v1").decision,
   "wait",
 );
+
+const casualRouteRoom = createRoom("casual-route", {
+  scenarioId: "casual_hangout",
+  agentIds: ["vibe_friend_v1", "observer_v1", "mediator_v1"],
+});
+const casualTrigger = addHumanMessage(casualRouteRoom, "Alex", "Tiny low-effort idea for tonight?");
+routeAgentDecisions(casualRouteRoom, casualTrigger, createAgentDecisions(casualRouteRoom, casualTrigger));
+const casualRoute = casualRouteRoom.routingDecisions.at(-1);
+assert.equal(casualRoute.roomType, "casual_hangout");
+assert.equal(casualRoute.selectedAgentId, "vibe_friend_v1");
+
+const supportRouteRoom = createRoom("support-route", {
+  scenarioId: "support_checkin",
+  agentIds: ["vibe_friend_v1", "observer_v1", "mediator_v1"],
+});
+const supportTrigger = addHumanMessage(supportRouteRoom, "Rae", "I am overwhelmed and lonely tonight.");
+routeAgentDecisions(supportRouteRoom, supportTrigger, createAgentDecisions(supportRouteRoom, supportTrigger));
+const supportRoute = supportRouteRoom.routingDecisions.at(-1);
+assert.equal(supportRoute.roomType, "support_emotional");
+assert.equal(supportRoute.selectedAgentId, "observer_v1");
+assert.equal(supportRoute.modelRouting.message.tier, "strong");
 
 const stalledRouteRoom = createRoom("stalled-route", {
   agentIds: ["vibe_friend_v1", "mediator_v1", "observer_v1"],

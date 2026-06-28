@@ -116,8 +116,23 @@ function freshArtifactCheck(exportPath, linksStat) {
 function demoContentCheck(exported) {
   const room = exported.room || {};
   const latestReport = latest(room.reports);
+  const requiredRoomTypes = [
+    "planning",
+    "drama_conflict",
+    "casual_hangout",
+    "fandom_rp",
+    "study_work",
+    "advice",
+    "game_night",
+    "debate",
+    "support_emotional",
+  ];
+  const scenarioRoomTypes = new Set(
+    Array.isArray(room.scenarios) ? room.scenarios.map((scenario) => scenario.roomType) : [],
+  );
   const ok =
     room.policyMode === "improved" &&
+    requiredRoomTypes.every((roomType) => scenarioRoomTypes.has(roomType)) &&
     Array.isArray(room.reports) &&
     room.reports.length >= 2 &&
     Array.isArray(latestReport && latestReport.comparison) &&
@@ -132,7 +147,7 @@ function demoContentCheck(exported) {
     status: ok ? "pass" : "fail",
     detail: ok
       ? `${room.reports.length} reports, ${latestReport.comparison.length} comparison rows`
-      : "demo export must include improved run, comparison rows, routed decisions, and route metadata",
+      : "demo export must include all routing room types, improved run, comparison rows, routed decisions, and route metadata",
   };
 }
 
