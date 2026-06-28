@@ -806,6 +806,7 @@ function renderReportPage() {
       ${renderModelRoutingSummary(report.modelRoutingSummary)}
       ${report.agents.map(renderExpandedAgentReport).join("")}
       ${renderComparison(report)}
+      ${renderRunArchive(room)}
     </section>
   `;
 }
@@ -1269,6 +1270,7 @@ function renderReport() {
     ${renderModelRoutingSummary(report.modelRoutingSummary)}
     ${report.agents.map(renderAgentReport).join("")}
     ${renderComparison(report)}
+    ${renderRunArchive(room)}
   `;
 }
 
@@ -1598,6 +1600,66 @@ function renderComparison(report) {
           `;
         })
         .join("")}
+    </article>
+  `;
+}
+
+function renderRunArchive(room) {
+  if (!room) return "";
+  const currentReports = (room.reports || []).filter(
+    (report) => report.sessionNumber === room.sessionNumber && report.policyMode === room.policyMode,
+  );
+  const currentRun = {
+    id: `${room.id}:current`,
+    policyMode: room.policyMode,
+    sessionNumber: room.sessionNumber,
+    scenarioTitle: room.scenario && room.scenario.title,
+    messages: room.messages || [],
+    decisions: room.decisions || [],
+    feedback: room.feedback || [],
+    reports: currentReports,
+    archivedAt: null,
+  };
+  const runs = [...(Array.isArray(room.runHistory) ? room.runHistory : []), currentRun].filter(
+    (run) =>
+      (Array.isArray(run.messages) && run.messages.length) ||
+      (Array.isArray(run.transcript) && run.transcript.length) ||
+      (Array.isArray(run.reports) && run.reports.length),
+  );
+  if (runs.length < 2) return "";
+
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Run Archive</strong></div>
+      <div class="metric-grid">
+        ${metric("Runs", runs.length)}
+        ${metric("Archived", Math.max(0, runs.length - 1))}
+        ${metric("Baseline", runs.some((run) => run.policyMode === "baseline") ? "yes" : "no")}
+        ${metric("Improved", runs.some((run) => run.policyMode === "improved") ? "yes" : "no")}
+      </div>
+      <div class="room-list">
+        ${runs
+          .map((run) => {
+            const messageCount = Array.isArray(run.transcript)
+              ? run.transcript.length
+              : Array.isArray(run.messages)
+                ? run.messages.length
+                : 0;
+            const decisionCount = Array.isArray(run.decisions) ? run.decisions.length : 0;
+            const feedbackCount = Array.isArray(run.feedback) ? run.feedback.length : 0;
+            const reportCount = Array.isArray(run.reports) ? run.reports.length : 0;
+            return `
+              <div class="room-list-item">
+                <div>
+                  <strong>${escapeHtml(formatTag(run.policyMode || "run"))} · Run ${escapeHtml(String(run.sessionNumber || "?"))}</strong>
+                  <span>${escapeHtml(run.scenarioTitle || room.scenario.title)} · ${messageCount} messages · ${decisionCount} decisions · ${feedbackCount} feedback tags · ${reportCount} reports</span>
+                </div>
+                <span class="status-pill">${run.archivedAt ? "archived" : "current"}</span>
+              </div>
+            `;
+          })
+          .join("")}
+      </div>
     </article>
   `;
 }

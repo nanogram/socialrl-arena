@@ -124,6 +124,7 @@ docker compose exec app npm run migrate:postgres
 - Routing recommendations include session feedback route-next/useful/annoying vote evidence
 - Report-generated policy diffs carried into the improved-policy rerun
 - Side-by-side before/after comparison with baseline and improved metrics
+- Run Archive card on reports summarizes baseline/current run transcripts, decisions, feedback, and reports
 - Exported run archive preserves baseline and improved transcripts, decisions, feedback, and reports
 - Agent-specific Shape pages with scorecard, quantitative stats, failure modes, policy diff, routing recommendation, and best/worst message context
 - Normal chat mode keeps active participants, invite, end-session, and report actions visible without exposing debug panels
