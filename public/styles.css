@@ -815,9 +815,9 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 
 .composer {
   display: grid;
-  grid-template-columns: 128px 1fr auto;
-  gap: 10px;
-  padding: 16px;
+  grid-template-columns: minmax(96px, 112px) minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 10px 12px;
   border-top: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 -1px 0 rgba(31, 37, 35, 0.02);
@@ -825,12 +825,17 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 
 .composer input,
 .composer select {
-  min-height: 42px;
+  min-height: 36px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 0 12px;
+  padding: 0 10px;
   background: #fff;
   color: var(--text);
+}
+
+.composer button {
+  min-height: 36px;
+  padding: 0 12px;
 }
 
 .side-panel {
@@ -859,15 +864,52 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 
 .panel-section {
   min-height: 0;
-  overflow: auto;
-  padding: 18px 16px;
+  overflow: hidden;
+  padding: 0;
   border-bottom: 1px solid var(--line);
 }
 
+.panel-section summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.panel-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.panel-section summary::after {
+  content: "›";
+  color: var(--muted);
+  font-size: 21px;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 140ms ease;
+}
+
+.panel-section[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-section[open] summary::after {
+  transform: rotate(-90deg);
+}
+
 .panel-section h2 {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 15px;
   letter-spacing: 0;
+}
+
+.panel-body {
+  padding: 12px 16px 16px;
 }
 
 .decision-list,
@@ -877,6 +919,10 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 }
 
 .setup-panel {
+  display: block;
+}
+
+.setup-panel .panel-body {
   display: grid;
   gap: 12px;
 }
@@ -1362,7 +1408,19 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   }
 
   .composer {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .composer select {
+    grid-column: 1 / -1;
+    min-height: 34px;
+  }
+
+  .composer input,
+  .composer button {
+    min-height: 36px;
   }
 
   .toolbar {

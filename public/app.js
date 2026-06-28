@@ -27,6 +27,7 @@ const quickFeedbackOrder = [
 const maxNormalParticipants = 6;
 
 const messagesEl = document.querySelector("#messages");
+const sidePanelEl = document.querySelector(".side-panel");
 const normalChatBarEl = document.querySelector("#normalChatBar");
 const normalSessionFeedbackEl = document.querySelector("#normalSessionFeedback");
 const replyPreviewEl = document.querySelector("#replyPreview");
@@ -167,6 +168,15 @@ sessionFeedbackForm.addEventListener("submit", (event) => {
 
 inviteLinkInput.addEventListener("focus", () => {
   inviteLinkInput.select();
+});
+
+sidePanelEl.querySelectorAll("details.panel-section").forEach((section) => {
+  section.addEventListener("toggle", () => {
+    if (!section.open) return;
+    sidePanelEl.querySelectorAll("details.panel-section[open]").forEach((otherSection) => {
+      if (otherSection !== section) otherSection.open = false;
+    });
+  });
 });
 
 function connect() {
