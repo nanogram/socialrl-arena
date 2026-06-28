@@ -8,6 +8,7 @@ npm start
 ```
 
 The app stores room state in `data/rooms.json` unless `DATABASE_URL` is set.
+With Postgres, the app writes both full room snapshots and normalized rows for messages, agent decisions, routing decisions, report jobs, feedback, and generated reports.
 
 For load testing without disk persistence overhead:
 

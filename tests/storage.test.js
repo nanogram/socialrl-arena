@@ -2,7 +2,13 @@ const assert = require("assert");
 const fs = require("fs/promises");
 const os = require("os");
 const path = require("path");
-const { addHumanMessage, addSessionFeedback, createRoom } = require("../src/core");
+const {
+  addHumanMessage,
+  addSessionFeedback,
+  createAgentDecisions,
+  createRoom,
+  routeAgentDecisions,
+} = require("../src/core");
 const { FileStorage, MemoryStorage, _internals } = require("../src/storage");
 
 async function main() {
@@ -14,7 +20,21 @@ async function main() {
     agentIds: ["mediator_v1", "observer_v1"],
   });
 
-  addHumanMessage(room, "Mina", "We need to decide what ships tomorrow.");
+  const triggerMessage = addHumanMessage(room, "Mina", "We need to decide what ships tomorrow.");
+  routeAgentDecisions(room, triggerMessage, createAgentDecisions(room, triggerMessage));
+  room.reportJobs.push({
+    id: "job-1",
+    roomId: room.id,
+    source: "storage-test",
+    status: "completed",
+    queuedAt: new Date().toISOString(),
+    startedAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+    latencyMs: 123,
+    queueDepthAtEnqueue: 1,
+    reportId: "report-1",
+    error: null,
+  });
   addSessionFeedback(
     room,
     {
@@ -35,6 +55,8 @@ async function main() {
   assert.equal(restored.scenario.id, "group_project");
   assert.deepEqual(restored.selectedAgentIds, ["mediator_v1", "observer_v1"]);
   assert.equal(restored.messages.length, 1);
+  assert.equal(restored.routingDecisions.length, 1);
+  assert.equal(restored.reportJobs[0].id, "job-1");
   assert.equal(restored.sessionFeedback[0].routeNextAgentId, "observer_v1");
   assert.equal(
     restored.activePolicyOverrides.observer_v1,
@@ -59,6 +81,20 @@ async function main() {
   assert.ok(writtenTables.some((sql) => sql.startsWith("insert into rooms")));
   assert.ok(writtenTables.some((sql) => sql.startsWith("insert into messages")));
   assert.ok(writtenTables.some((sql) => sql.startsWith("insert into agents")));
+  const routingDecisionWrite = fakeClient.queries.find((entry) =>
+    entry.sql.startsWith("insert into routing_decisions"),
+  );
+  assert.ok(routingDecisionWrite);
+  assert.equal(routingDecisionWrite.params[1], "persisted-room");
+  assert.ok(routingDecisionWrite.params[10].includes("agentId"));
+  assert.ok(Array.isArray(routingDecisionWrite.params[11]));
+  const reportJobWrite = fakeClient.queries.find((entry) =>
+    entry.sql.startsWith("insert into report_jobs"),
+  );
+  assert.ok(reportJobWrite);
+  assert.equal(reportJobWrite.params[0], "job-1");
+  assert.equal(reportJobWrite.params[3], "completed");
+  assert.equal(reportJobWrite.params[8], 1);
   const sessionFeedbackWrite = fakeClient.queries.find((entry) =>
     entry.sql.startsWith("insert into session_feedback"),
   );

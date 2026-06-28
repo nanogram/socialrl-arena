@@ -7,7 +7,7 @@ const messagesPerRoom = Number(process.env.LOAD_TEST_MESSAGES_PER_ROOM || 5);
 const scenarioId = process.env.LOAD_TEST_SCENARIO || "weekend_trip";
 const reportTimeoutMs = Number(process.env.LOAD_TEST_REPORT_TIMEOUT_MS || 15000);
 const interMessageDelayMs = Number(process.env.LOAD_TEST_INTER_MESSAGE_DELAY_MS || 30);
-const settleBeforeReportMs = Number(process.env.LOAD_TEST_SETTLE_BEFORE_REPORT_MS || 350);
+const settleBeforeReportMs = Number(process.env.LOAD_TEST_SETTLE_BEFORE_REPORT_MS || 1000);
 
 async function main() {
   const startedAt = Date.now();
@@ -65,7 +65,15 @@ async function main() {
     ),
   );
 
-  if (metrics.errors || metrics.unexpectedSocketCloses) process.exit(1);
+  const failed =
+    metrics.errors ||
+    metrics.unexpectedSocketCloses ||
+    metrics.reportRooms.size !== roomCount ||
+    metrics.socketCloses !== metrics.sockets ||
+    metrics.firstTokenLatencies.length === 0 ||
+    metrics.feedbackAckLatencies.length === 0;
+
+  if (failed) process.exit(1);
 }
 
 async function exerciseRoom(roomId, metrics) {

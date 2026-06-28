@@ -68,6 +68,36 @@ create table if not exists agent_decisions (
   created_at timestamptz not null
 );
 
+create table if not exists routing_decisions (
+  id text primary key,
+  room_id text not null references rooms(id) on delete cascade,
+  trigger_message_id text references messages(id) on delete set null,
+  router_version text not null,
+  router_model_name text,
+  room_type text not null,
+  group_state text not null,
+  selected_agent_id text,
+  selected_agent_name text,
+  reason text not null,
+  candidate_scores jsonb not null,
+  blocked_agent_ids text[] not null default '{}',
+  created_at timestamptz not null
+);
+
+create table if not exists report_jobs (
+  id text primary key,
+  room_id text not null references rooms(id) on delete cascade,
+  source text not null,
+  status text not null check (status in ('queued', 'processing', 'completed', 'failed')),
+  queued_at timestamptz not null,
+  started_at timestamptz,
+  completed_at timestamptz,
+  latency_ms integer,
+  queue_depth_at_enqueue integer not null default 0,
+  report_id text,
+  error text
+);
+
 create table if not exists message_feedback (
   id text primary key,
   message_id text not null references messages(id) on delete cascade,
@@ -132,6 +162,8 @@ create table if not exists room_snapshots (
 
 create index if not exists idx_messages_room_created on messages(room_id, created_at);
 create index if not exists idx_agent_decisions_room_created on agent_decisions(room_id, created_at);
+create index if not exists idx_routing_decisions_room_created on routing_decisions(room_id, created_at);
+create index if not exists idx_report_jobs_room_queued on report_jobs(room_id, queued_at);
 create index if not exists idx_message_feedback_room on message_feedback(room_id);
 create index if not exists idx_agent_reports_room on agent_reports(room_id, session_number);
 

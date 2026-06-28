@@ -118,7 +118,7 @@ docker compose exec app npm run migrate:postgres
 - Export transcript/report JSON
 - Scripted sample session for quick demos
 - File-backed local persistence
-- Postgres schema, migration path, snapshots, and normalized table writes
+- Postgres schema, migration path, snapshots, and normalized table writes for messages, decisions, routing decisions, report jobs, feedback, and reports
 - Optional HTTP LLM provider hook
 - Optional OpenAI Responses API provider hook
 - Per-stage OpenAI model routing for decision, router, message, and report calls

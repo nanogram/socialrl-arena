@@ -200,7 +200,9 @@ async function replaceNormalizedRoom(client, room) {
   await deleteRoomChildren(client, room.id);
   await insertParticipants(client, room.id, participantRowsForRoom(room, snapshot.participants));
   await insertMessages(client, snapshot.messages);
+  await insertRoutingDecisions(client, snapshot.routingDecisions);
   await insertAgentDecisions(client, snapshot.decisions);
+  await insertReportJobs(client, snapshot.reportJobs);
   await insertMessageFeedback(client, snapshot.feedback);
   await insertSessionFeedback(client, snapshot.sessionFeedback);
   await insertReports(client, snapshot.reports);
@@ -241,7 +243,9 @@ async function deleteRoomChildren(client, roomId) {
     "room_reports",
     "session_feedback",
     "message_feedback",
+    "report_jobs",
     "agent_decisions",
+    "routing_decisions",
     "messages",
     "participants",
   ];
@@ -347,6 +351,63 @@ async function insertAgentDecisions(client, decisions) {
         decision.policyVersion,
         JSON.stringify(decision.route || {}),
         decision.createdAt,
+      ],
+    );
+  }
+}
+
+async function insertRoutingDecisions(client, routingDecisions) {
+  for (const decision of routingDecisions) {
+    await client.query(
+      `
+        insert into routing_decisions (
+          id, room_id, trigger_message_id, router_version, router_model_name,
+          room_type, group_state, selected_agent_id, selected_agent_name, reason,
+          candidate_scores, blocked_agent_ids, created_at
+        )
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13)
+      `,
+      [
+        decision.id,
+        decision.roomId,
+        decision.triggerMessageId,
+        decision.routerVersion,
+        decision.routerModelName || null,
+        decision.roomType,
+        decision.groupState,
+        decision.selectedAgentId || null,
+        decision.selectedAgentName || null,
+        decision.reason,
+        JSON.stringify(decision.candidateScores || []),
+        decision.blockedAgentIds || [],
+        decision.createdAt,
+      ],
+    );
+  }
+}
+
+async function insertReportJobs(client, reportJobs) {
+  for (const job of reportJobs) {
+    await client.query(
+      `
+        insert into report_jobs (
+          id, room_id, source, status, queued_at, started_at, completed_at,
+          latency_ms, queue_depth_at_enqueue, report_id, error
+        )
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `,
+      [
+        job.id,
+        job.roomId,
+        job.source,
+        job.status,
+        job.queuedAt,
+        job.startedAt || null,
+        job.completedAt || null,
+        job.latencyMs === undefined ? null : job.latencyMs,
+        job.queueDepthAtEnqueue || 0,
+        job.reportId || null,
+        job.error || null,
       ],
     );
   }

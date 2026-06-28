@@ -65,6 +65,8 @@ function checkSpecMarkers() {
   const app = fs.readFileSync("public/app.js", "utf8");
   const server = fs.readFileSync("src/server.js", "utf8");
   const core = fs.readFileSync("src/core.js", "utf8");
+  const storage = fs.readFileSync("src/storage.js", "utf8");
+  const schema = fs.readFileSync("db/schema.sql", "utf8");
   const provider = fs.readFileSync("src/llmProvider.js", "utf8");
   const env = fs.readFileSync(".env.example", "utf8");
 
@@ -73,6 +75,8 @@ function checkSpecMarkers() {
     ["public/app.js", app, ["AI Shape", "basePersonality", "candidateScores", "comparisonColumn", "renderParticipants", "renderPolicies", "renderRuleAdjustments", "renderRoutingDecisions", "renderThinkingState", "socialrl_debug_panel", "socialrl_display_name"]],
     ["src/server.js", server, ["addMessageAliases", "agent_stayed_silent", "eventValue", "message_stream_delta", "report_url", "resolveEventRoom", "sender_name"]],
     ["src/core.js", core, ["activePolicyOverrides", "applyRoutingPolicy", "generateImprovedPolicy", "pickRoutedWinner", "routingScores", "p99FullResponseLatencyMs", "routeNextAgentCounts"]],
+    ["src/storage.js", storage, ["insertRoutingDecisions", "insertReportJobs", "routing_decisions", "report_jobs"]],
+    ["db/schema.sql", schema, ["create table if not exists routing_decisions", "create table if not exists report_jobs"]],
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "routerModelName"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
   ]) {
@@ -119,6 +123,8 @@ function checkPerformanceReport() {
     '"errors": 0',
     '"reportsReady": 100',
     '"unexpectedSocketCloses": 0',
+    '"firstTokenSamples":',
+    '"feedbackSamples": 100',
     '"p95FirstTokenLatencyMs"',
     '"p95FeedbackAckMs"',
     '"reportThroughputPerSecond"',
