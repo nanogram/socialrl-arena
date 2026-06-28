@@ -259,13 +259,11 @@ async function handleClientEvent(ws, event) {
         )
       : {};
 
-    room.policyMode = "improved";
-    room.sessionNumber += 1;
-    resetRoomForNextRun(room, "improved");
     room.activePolicyOverrides = activePolicyOverrides;
-    if (latestReport) {
-      room.currentPolicyVersion = `improved_from_${latestReport.id.slice(0, 8)}`;
-    }
+    resetRoomForNextRun(room, "improved", {
+      currentPolicyVersion: latestReport ? `improved_from_${latestReport.id.slice(0, 8)}` : undefined,
+      nextSessionNumber: room.sessionNumber + 1,
+    });
     await persistRoom(room);
     broadcastRoom(room.id, "state_snapshot", snapshot(room.id));
     return;

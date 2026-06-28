@@ -201,10 +201,24 @@ function demoReportCheck(exported) {
 function demoExportCheck(exported) {
   const transcript = Array.isArray(exported.transcript) ? exported.transcript : [];
   const aiTranscript = transcript.filter((message) => message.senderType === "ai");
+  const runs = Array.isArray(exported.runs) ? exported.runs : [];
+  const baselineRun = runs.find((run) => run.policyMode === "baseline");
+  const improvedRun = runs.find((run) => run.policyMode === "improved");
   const ok =
     exported.exportedAt &&
     exported.room &&
     transcript.length > 0 &&
+    runs.length >= 2 &&
+    baselineRun &&
+    Array.isArray(baselineRun.transcript) &&
+    baselineRun.transcript.length > 0 &&
+    Array.isArray(baselineRun.reports) &&
+    baselineRun.reports.length > 0 &&
+    improvedRun &&
+    Array.isArray(improvedRun.transcript) &&
+    improvedRun.transcript.length > 0 &&
+    Array.isArray(improvedRun.reports) &&
+    improvedRun.reports.length > 0 &&
     transcript.every((message) => "senderId" in message) &&
     transcript.every((message) => "feedbackTags" in message) &&
     transcript.every((message) => "replyToMessageId" in message) &&
@@ -222,8 +236,8 @@ function demoExportCheck(exported) {
     name: "demo:export-contract",
     status: ok ? "pass" : "fail",
     detail: ok
-      ? `${transcript.length} transcript messages exported`
-      : "export JSON missing transcript/sender/reply/model evidence",
+      ? `${transcript.length} current transcript messages plus ${runs.length} run snapshots exported`
+      : "export JSON missing transcript/sender/reply/model or before-after run archive evidence",
   };
 }
 

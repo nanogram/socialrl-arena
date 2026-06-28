@@ -260,12 +260,18 @@ assert.equal(refreshedReport.id, report.id);
 assert.equal(refreshedReport.sessionFeedbackSummary.totalResponses, 2);
 assert.equal(refreshedReport.sessionFeedbackSummary.routeNextAgentCounts.mediator_v1, 1);
 
-room.policyMode = "improved";
-room.sessionNumber += 1;
-room.messages = [];
-room.decisions = [];
-room.feedback = [];
-room.sessionFeedback = [];
+room.activePolicyOverrides = { mediator_v1: refreshedReport.agents[0].policyDiff.after };
+resetRoomForNextRun(room, "improved", {
+  currentPolicyVersion: `improved_from_${refreshedReport.id.slice(0, 8)}`,
+  nextSessionNumber: room.sessionNumber + 1,
+});
+assert.equal(room.sessionNumber, 2);
+assert.equal(room.runHistory.length, 1);
+assert.equal(room.runHistory[0].policyMode, "baseline");
+assert.equal(room.runHistory[0].currentPolicyVersion, "baseline_v1");
+assert.ok(room.currentPolicyVersion.startsWith("improved_from_"));
+assert.ok(room.runHistory[0].messages.length >= aiMessages.length);
+assert.ok(room.runHistory[0].reports.some((archivedReport) => archivedReport.id === refreshedReport.id));
 
 const improvedTurn = runAgentTurn(
   room,
@@ -305,6 +311,9 @@ room.activePolicyOverrides = { mediator_v1: improvedReport.agents[0].policyDiff.
 room.currentPolicyVersion = `improved_from_${improvedReport.id.slice(0, 8)}`;
 resetRoomForNextRun(room, "improved");
 assert.ok(room.currentPolicyVersion.startsWith("improved_from_"));
+assert.equal(room.runHistory.length, 2);
+assert.equal(room.runHistory[1].policyMode, "improved");
+assert.ok(room.runHistory[1].reports.some((archivedReport) => archivedReport.id === improvedReport.id));
 
 setRoomConfig(room, {
   scenarioId: "friend_conflict",
@@ -331,6 +340,16 @@ assert.ok(
 assert.ok(
   exported.transcript.every((message) => "replyToMessageId" in message),
   "export transcript should preserve reply targeting metadata",
+);
+assert.ok(Array.isArray(exported.runs), "export should include before/after run archive");
+assert.ok(exported.runs.length >= 3, "export should include baseline, improved, and current run snapshots");
+assert.ok(
+  exported.runs.some((run) => run.policyMode === "baseline" && run.transcript.length > 0),
+  "run archive should preserve baseline transcript",
+);
+assert.ok(
+  exported.runs.some((run) => run.policyMode === "improved" && run.transcript.length > 0),
+  "run archive should preserve improved transcript",
 );
 assert.ok(Array.isArray(exported.room.routingDecisions));
 

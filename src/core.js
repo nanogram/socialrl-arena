@@ -380,6 +380,7 @@ function createRoom(id = "demo-room", options = {}) {
     feedback: [],
     sessionFeedback: [],
     reports: [],
+    runHistory: [],
     participants: new Map(),
     currentGroupState: "active",
     runtimeMetrics: createRuntimeMetrics(),
@@ -407,6 +408,7 @@ function hydrateRoom(snapshot = {}) {
   room.feedback = Array.isArray(snapshot.feedback) ? snapshot.feedback : [];
   room.sessionFeedback = Array.isArray(snapshot.sessionFeedback) ? snapshot.sessionFeedback : [];
   room.reports = Array.isArray(snapshot.reports) ? snapshot.reports : [];
+  room.runHistory = Array.isArray(snapshot.runHistory) ? snapshot.runHistory : [];
   room.currentGroupState = snapshot.currentGroupState || room.currentGroupState;
   room.runtimeMetrics = hydrateRuntimeMetrics(snapshot.runtimeMetrics);
   room.activePolicyOverrides =
@@ -433,15 +435,22 @@ function setRoomConfig(room, input = {}) {
   return room;
 }
 
-function resetRoomForNextRun(room, policyMode = room.policyMode) {
+function resetRoomForNextRun(room, policyMode = room.policyMode, options = {}) {
+  archiveCurrentRun(room);
+  if (options.nextSessionNumber !== undefined) {
+    room.sessionNumber = Math.max(1, Number(options.nextSessionNumber) || room.sessionNumber);
+  }
   const shouldPreserveGeneratedPolicyVersion =
+    !options.currentPolicyVersion &&
     policyMode === "improved" &&
     room.activePolicyOverrides &&
     Object.keys(room.activePolicyOverrides).length > 0 &&
     String(room.currentPolicyVersion || "").startsWith("improved_from_");
-  const currentPolicyVersion = shouldPreserveGeneratedPolicyVersion
-    ? room.currentPolicyVersion
-    : `${policyMode}_v${room.sessionNumber}`;
+  const currentPolicyVersion =
+    options.currentPolicyVersion ||
+    (shouldPreserveGeneratedPolicyVersion
+      ? room.currentPolicyVersion
+      : `${policyMode}_v${room.sessionNumber}`);
   room.status = "active";
   room.endedAt = null;
   room.policyMode = policyMode;
@@ -455,6 +464,51 @@ function resetRoomForNextRun(room, policyMode = room.policyMode) {
   room.currentGroupState = "active";
   room.runtimeMetrics = createRuntimeMetrics();
   return room;
+}
+
+function archiveCurrentRun(room) {
+  const hasRunEvidence =
+    room.messages.length ||
+    room.decisions.length ||
+    room.routingDecisions.length ||
+    room.feedback.length ||
+    room.sessionFeedback.length;
+  if (!hasRunEvidence) return null;
+
+  const reports = room.reports.filter(
+    (report) => report.sessionNumber === room.sessionNumber && report.policyMode === room.policyMode,
+  );
+  const archive = {
+    id: `${room.id}:run:${room.sessionNumber}:${room.policyMode}`,
+    roomId: room.id,
+    scenarioId: room.scenario.id,
+    scenarioTitle: room.scenario.title,
+    roomType: room.scenario.roomType,
+    sessionNumber: room.sessionNumber,
+    policyMode: room.policyMode,
+    currentPolicyVersion: room.currentPolicyVersion,
+    status: room.status,
+    startedAt: room.messages[0] ? room.messages[0].createdAt : room.createdAt,
+    endedAt: room.endedAt,
+    archivedAt: new Date().toISOString(),
+    currentGroupState: room.currentGroupState,
+    participants: cloneJson([...room.participants.values()]),
+    messages: cloneJson(room.messages),
+    decisions: cloneJson(room.decisions),
+    routingDecisions: cloneJson(room.routingDecisions),
+    reportJobs: cloneJson(room.reportJobs),
+    feedback: cloneJson(room.feedback),
+    sessionFeedback: cloneJson(room.sessionFeedback),
+    reports: cloneJson(reports),
+  };
+
+  const existingIndex = room.runHistory.findIndex((run) => run.id === archive.id);
+  if (existingIndex === -1) {
+    room.runHistory.push(archive);
+  } else {
+    room.runHistory[existingIndex] = archive;
+  }
+  return archive;
 }
 
 function createRuntimeMetrics() {
@@ -2044,25 +2098,86 @@ function buildAgentRoutingScores(agent, scorecard, stats, room) {
 
 function createExport(room) {
   const serialized = serializeRoom(room);
+  const runs = [
+    ...(Array.isArray(serialized.runHistory) ? serialized.runHistory.map(exportRunSnapshot) : []),
+    exportRunSnapshot({
+      id: `${serialized.id}:run:${serialized.sessionNumber}:${serialized.policyMode}:current`,
+      roomId: serialized.id,
+      scenarioId: serialized.scenario.id,
+      scenarioTitle: serialized.scenario.title,
+      roomType: serialized.scenario.roomType,
+      sessionNumber: serialized.sessionNumber,
+      policyMode: serialized.policyMode,
+      currentPolicyVersion: serialized.currentPolicyVersion,
+      status: serialized.status,
+      startedAt: serialized.messages[0] ? serialized.messages[0].createdAt : serialized.createdAt,
+      endedAt: serialized.endedAt,
+      currentGroupState: serialized.currentGroupState,
+      participants: serialized.participants,
+      messages: serialized.messages,
+      decisions: serialized.decisions,
+      routingDecisions: serialized.routingDecisions,
+      reportJobs: serialized.reportJobs,
+      feedback: serialized.feedback,
+      sessionFeedback: serialized.sessionFeedback,
+      reports: serialized.reports.filter(
+        (report) =>
+          report.sessionNumber === serialized.sessionNumber &&
+          report.policyMode === serialized.policyMode,
+      ),
+    }),
+  ];
   return {
     exportedAt: new Date().toISOString(),
     room: serialized,
-    transcript: serialized.messages.map((message) => ({
-      id: message.id,
-      senderId: message.senderId,
-      senderName: message.senderName,
-      senderType: message.senderType,
-      agentId: message.agentId,
-      decisionId: message.decisionId,
-      replyToMessageId: message.replyToMessageId,
-      content: message.content,
-      createdAt: message.createdAt,
-      modelName: message.modelName,
-      promptVersion: message.promptVersion,
-      policyVersion: message.policyVersion,
-      feedbackTags: message.feedback.map((entry) => entry.tag),
-    })),
+    transcript: exportTranscript(serialized.messages),
+    runs,
   };
+}
+
+function exportRunSnapshot(run) {
+  const messages = Array.isArray(run.messages) ? run.messages : [];
+  return {
+    id: run.id,
+    roomId: run.roomId,
+    scenarioId: run.scenarioId,
+    scenarioTitle: run.scenarioTitle,
+    roomType: run.roomType,
+    sessionNumber: run.sessionNumber,
+    policyMode: run.policyMode,
+    currentPolicyVersion: run.currentPolicyVersion,
+    status: run.status,
+    startedAt: run.startedAt || null,
+    endedAt: run.endedAt || null,
+    archivedAt: run.archivedAt || null,
+    currentGroupState: run.currentGroupState || "active",
+    transcript: exportTranscript(messages),
+    messages,
+    decisions: Array.isArray(run.decisions) ? run.decisions : [],
+    routingDecisions: Array.isArray(run.routingDecisions) ? run.routingDecisions : [],
+    reportJobs: Array.isArray(run.reportJobs) ? run.reportJobs : [],
+    feedback: Array.isArray(run.feedback) ? run.feedback : [],
+    sessionFeedback: Array.isArray(run.sessionFeedback) ? run.sessionFeedback : [],
+    reports: Array.isArray(run.reports) ? run.reports : [],
+  };
+}
+
+function exportTranscript(messages) {
+  return messages.map((message) => ({
+    id: message.id,
+    senderId: message.senderId,
+    senderName: message.senderName,
+    senderType: message.senderType,
+    agentId: message.agentId,
+    decisionId: message.decisionId,
+    replyToMessageId: message.replyToMessageId,
+    content: message.content,
+    createdAt: message.createdAt,
+    modelName: message.modelName,
+    promptVersion: message.promptVersion,
+    policyVersion: message.policyVersion,
+    feedbackTags: Array.isArray(message.feedback) ? message.feedback.map((entry) => entry.tag) : [],
+  }));
 }
 
 function inferTargetUser(triggerMessage) {
@@ -2168,6 +2283,10 @@ function unique(values) {
   return [...new Set(values)];
 }
 
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value || []));
+}
+
 function countWords(text) {
   return String(text || "")
     .trim()
@@ -2218,6 +2337,7 @@ function serializeRoom(room) {
     feedback: room.feedback,
     sessionFeedback: room.sessionFeedback,
     reports: room.reports,
+    runHistory: room.runHistory,
     currentGroupState: room.currentGroupState,
     runtimeMetrics: room.runtimeMetrics,
     activePolicyOverrides: room.activePolicyOverrides,
