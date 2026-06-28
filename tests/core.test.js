@@ -307,6 +307,94 @@ const playfulRoute = playfulRouteRoom.routingDecisions.at(-1);
 assert.equal(playfulRoute.selectedAgentId, null);
 assert.ok(playfulRoute.blockedAgentIds.includes("vibe_friend_v1"));
 
+const emotionalRouteRoom = createRoom("emotional-route", {
+  scenarioId: "friend_conflict",
+  agentIds: ["vibe_friend_v1", "observer_v1", "mediator_v1"],
+});
+const emotionalTrigger = addHumanMessage(emotionalRouteRoom, "Rae", "I feel hurt and overwhelmed, and honestly not okay.");
+const emotionalDecisions = routeAgentDecisions(emotionalRouteRoom, emotionalTrigger, [
+  makeDecision(emotionalRouteRoom, emotionalTrigger, "vibe_friend_v1", {
+    confidence: 0.95,
+    groupState: "emotionally_sensitive",
+    id: "vibe-emotional",
+  }),
+  makeDecision(emotionalRouteRoom, emotionalTrigger, "observer_v1", {
+    confidence: 0.7,
+    groupState: "emotionally_sensitive",
+    id: "observer-emotional",
+  }),
+  makeDecision(emotionalRouteRoom, emotionalTrigger, "mediator_v1", {
+    confidence: 0.66,
+    groupState: "emotionally_sensitive",
+    id: "mediator-emotional",
+  }),
+]);
+const emotionalRoute = emotionalRouteRoom.routingDecisions.at(-1);
+assert.equal(emotionalRoute.groupState, "emotionally_sensitive");
+assert.equal(emotionalRoute.selectedAgentId, "observer_v1");
+assert.ok(emotionalRoute.blockedAgentIds.includes("vibe_friend_v1"));
+assert.equal(
+  emotionalDecisions.find((decision) => decision.agentId === "vibe_friend_v1").decision,
+  "wait",
+);
+
+const stalledRouteRoom = createRoom("stalled-route", {
+  agentIds: ["vibe_friend_v1", "mediator_v1", "observer_v1"],
+});
+const stalledTrigger = addHumanMessage(stalledRouteRoom, "Alex", "Anyone still here? I am stuck and have no idea what now.");
+routeAgentDecisions(stalledRouteRoom, stalledTrigger, [
+  makeDecision(stalledRouteRoom, stalledTrigger, "vibe_friend_v1", {
+    confidence: 0.5,
+    groupState: "stalled",
+    id: "vibe-stalled",
+  }),
+  makeDecision(stalledRouteRoom, stalledTrigger, "mediator_v1", {
+    confidence: 0.55,
+    groupState: "stalled",
+    id: "mediator-stalled",
+  }),
+  makeDecision(stalledRouteRoom, stalledTrigger, "observer_v1", {
+    confidence: 0.5,
+    groupState: "stalled",
+    id: "observer-stalled",
+  }),
+]);
+const stalledRoute = stalledRouteRoom.routingDecisions.at(-1);
+assert.equal(stalledRoute.groupState, "stalled");
+assert.equal(stalledRoute.selectedAgentId, "vibe_friend_v1");
+assert.ok(
+  stalledRoute.candidateScores
+    .find((candidate) => candidate.agentId === "vibe_friend_v1")
+    .ruleAdjustments.includes("boosted Vibe Friend to revive stalled room"),
+);
+
+const chaoticRouteRoom = createRoom("chaotic-route", {
+  agentIds: ["vibe_friend_v1", "observer_v1", "mediator_v1"],
+});
+addHumanMessage(chaoticRouteRoom, "Alex", "This is random side quest energy.");
+const chaoticTrigger = addHumanMessage(chaoticRouteRoom, "Jules", "Pizza memes, off topic ideas, and three threads are spiraling.");
+routeAgentDecisions(chaoticRouteRoom, chaoticTrigger, [
+  makeDecision(chaoticRouteRoom, chaoticTrigger, "vibe_friend_v1", {
+    confidence: 0.74,
+    groupState: "chaotic",
+    id: "vibe-chaotic",
+  }),
+  makeDecision(chaoticRouteRoom, chaoticTrigger, "observer_v1", {
+    confidence: 0.58,
+    groupState: "chaotic",
+    id: "observer-chaotic",
+  }),
+  makeDecision(chaoticRouteRoom, chaoticTrigger, "mediator_v1", {
+    confidence: 0.52,
+    groupState: "chaotic",
+    id: "mediator-chaotic",
+  }),
+]);
+const chaoticRoute = chaoticRouteRoom.routingDecisions.at(-1);
+assert.equal(chaoticRoute.groupState, "chaotic");
+assert.equal(chaoticRoute.selectedAgentId, "observer_v1");
+assert.ok(chaoticRoute.blockedAgentIds.includes("vibe_friend_v1"));
+
 const feedbackRouteRoom = createRoom("feedback-route", {
   agentIds: ["mediator_v1", "observer_v1"],
 });

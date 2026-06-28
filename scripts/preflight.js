@@ -80,11 +80,12 @@ function checkSpecMarkers() {
     ["public/index.html", html, ["debugToggleButton", "displayNameInput", "normalChatBar", "normalSessionFeedback", "participants", "policies", "routingDecisions"]],
     ["public/app.js", app, ["AI Shape", "agentSelectionRules", "basePersonality", "candidateScores", "comparisonColumn", "copyInviteLink", "normalAgentOptions", "renderExampleContext", "renderFailureModeCard", "renderNormalChatBar", "renderNormalSessionFeedback", "renderParticipants", "renderPolicies", "renderRoutingDecisions", "renderRoutingFeedbackVotes", "renderRuleAdjustments", "renderShapeStats", "renderSystemPerformance", "renderThinkingState", "targetUser", "socialrl_debug_panel", "socialrl_display_name"]],
     ["src/server.js", server, ["addMessageAliases", "agent_stayed_silent", "agent_waited", "eventValue", "message_stream_delta", "report_url", "resolveEventRoom", "sender_name", "session_feedback_refresh"]],
-    ["src/core.js", core, ["activePolicyOverrides", "agentSelectionRules", "applyRoutingPolicy", "buildRoutingRecommendationReason", "detectQuietParticipant", "generateImprovedPolicy", "pickRoutedWinner", "refreshLatestReport", "routingScores", "roomsTracked", "targetUserForDecision", "p99FirstTokenLatencyMs", "p99FullResponseLatencyMs", "llmErrorRate", "routeNextAgentCounts"]],
+    ["src/core.js", core, ["activePolicyOverrides", "agentSelectionRules", "applyRoutingPolicy", "buildRoutingRecommendationReason", "chaotic", "detectQuietParticipant", "emotionallySensitive", "generateImprovedPolicy", "pickRoutedWinner", "refreshLatestReport", "routingScores", "roomsTracked", "stalled", "targetUserForDecision", "p99FirstTokenLatencyMs", "p99FullResponseLatencyMs", "llmErrorRate", "routeNextAgentCounts"]],
     ["src/storage.js", storage, ["firstTokenLatencyMs", "first_token_latency_ms", "insertRoutingDecisions", "insertReportJobs", "routing_decisions", "report_jobs"]],
     ["db/schema.sql", schema, ["create table if not exists routing_decisions", "create table if not exists report_jobs", "first_token_latency_ms"]],
     ["render.yaml", render, ["healthCheckPath: /api/health", "fromDatabase:", "socialrl-arena-db"]],
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "recordProviderFailure", "routerModelName"]],
+    ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
   ]) {
     for (const marker of markers) {

@@ -26,7 +26,8 @@ function buildAgentDecisionPrompt({ room, triggerMessage }) {
               targetUser: "string|null",
               reason: "short string",
               confidence: "number from 0 to 1",
-              groupState: "active | stalled | chaotic | tense | playful | decision_needed | high_human_momentum | low_human_momentum",
+              groupState:
+                "active | stalled | chaotic | tense | playful | decision_needed | emotionally_sensitive | high_human_momentum | low_human_momentum",
             },
           ],
         },

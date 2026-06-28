@@ -592,6 +592,29 @@ function applyRoutingPolicy(room, signals, rawDecisions) {
       adjusted.ruleAdjustments.push("blocked Vibe Friend in tense room");
     }
 
+    if (signals.emotionallySensitive && decision.agentId === "vibe_friend_v1") {
+      adjusted.decision = "wait";
+      adjusted.ruleBlocked = true;
+      adjusted.ruleAdjustments.push("blocked Vibe Friend in emotionally sensitive room");
+    }
+
+    if (signals.chaotic) {
+      if (decision.agentId === "vibe_friend_v1" && adjusted.confidence < 0.82) {
+        adjusted.decision = "stay_silent";
+        adjusted.ruleBlocked = true;
+        adjusted.ruleAdjustments.push("held Vibe Friend below 82% confidence during chaotic side threads");
+      }
+      if (decision.agentId === "observer_v1") {
+        adjusted.confidence += 0.12;
+        adjusted.ruleAdjustments.push("boosted Observer for chaotic room reset");
+      }
+    }
+
+    if (signals.stalled && decision.agentId === "vibe_friend_v1") {
+      adjusted.confidence += 0.12;
+      adjusted.ruleAdjustments.push("boosted Vibe Friend to revive stalled room");
+    }
+
     if (signals.playful && signals.activeHumanExchange) {
       if (decision.agentId === "vibe_friend_v1" && adjusted.confidence < 0.8) {
         adjusted.decision = "stay_silent";
@@ -627,7 +650,7 @@ function applyRoutingPolicy(room, signals, rawDecisions) {
 function pickRoutedWinner(room, signals, candidates) {
   if (!candidates.length) return null;
 
-  if (signals.tension) {
+  if (signals.tension || signals.emotionallySensitive || signals.chaotic) {
     return (
       candidates.find((decision) => decision.agentId === "observer_v1") ||
       candidates.find((decision) => decision.agentId === "mediator_v1") ||
@@ -643,6 +666,10 @@ function pickRoutedWinner(room, signals, candidates) {
     return candidates.find((decision) => decision.agentId === "vibe_friend_v1") || candidates[0];
   }
 
+  if (signals.stalled || signals.lowEnergy) {
+    return candidates.find((decision) => decision.agentId === "vibe_friend_v1") || candidates[0];
+  }
+
   return candidates[0];
 }
 
@@ -650,11 +677,20 @@ function routingReasonForWinner(room, signals, winner) {
   if (signals.tension && ["observer_v1", "mediator_v1"].includes(winner.agentId)) {
     return `${winner.agentName} was routed because tense rooms need low-ego mediation, not extra social energy.`;
   }
+  if (signals.emotionallySensitive && ["observer_v1", "mediator_v1"].includes(winner.agentId)) {
+    return `${winner.agentName} was routed because emotionally sensitive rooms need careful support and restraint.`;
+  }
+  if (signals.chaotic && ["observer_v1", "mediator_v1"].includes(winner.agentId)) {
+    return `${winner.agentName} was routed because chaotic side threads needed a quiet reset.`;
+  }
   if (room.scenario.roomType === "planning" && signals.decisionNeeded && winner.agentId === "mediator_v1") {
     return "Mediator was routed because a planning room needed a concrete decision.";
   }
   if (signals.playful && winner.agentId === "vibe_friend_v1") {
     return "Vibe Friend was routed because the room was playful and its confidence cleared the social-energy threshold.";
+  }
+  if ((signals.stalled || signals.lowEnergy) && winner.agentId === "vibe_friend_v1") {
+    return "Vibe Friend was routed because a stalled room needed low-stakes energy.";
   }
   return `${winner.agentName} had the strongest ${winner.groupState} fit.`;
 }
@@ -717,11 +753,21 @@ function decideForAgent(agent, room, triggerMessage) {
       confidence += improved ? 0.24 : 0.18;
       reasons.push("there is tension to reduce");
     }
+    if (signals.stalled) {
+      confidence += improved ? 0.24 : 0.14;
+      reasons.push("the room is stalled and needs progress");
+    }
     if (!improved && signals.humanCount >= 3) {
       confidence += 0.18;
       reasons.push("enough context exists to summarize");
     }
-    if (improved && signals.activeHumanExchange && !signals.tension && !signals.decisionNeeded) {
+    if (
+      improved &&
+      signals.activeHumanExchange &&
+      !signals.tension &&
+      !signals.emotionallySensitive &&
+      !signals.decisionNeeded
+    ) {
       confidence -= 0.34;
       reasons.push("humans are already making progress");
     }
@@ -736,20 +782,39 @@ function decideForAgent(agent, room, triggerMessage) {
       confidence += improved ? 0.36 : 0.18;
       reasons.push("the room needs energy");
     }
+    if (signals.stalled) {
+      confidence += improved ? 0.42 : 0.24;
+      reasons.push("the chat is stalled");
+    }
     if (!improved && signals.humanCount >= 1) {
       confidence += 0.16;
       reasons.push("a casual reaction can keep the chat lively");
     }
-    if (improved && (signals.activeHumanExchange || signals.decisionNeeded || signals.tension)) {
+    if (
+      improved &&
+      (signals.activeHumanExchange ||
+        signals.decisionNeeded ||
+        signals.tension ||
+        signals.emotionallySensitive ||
+        signals.chaotic)
+    ) {
       confidence -= 0.42;
       reasons.push("planning momentum should not be interrupted");
     }
   }
 
   if (agent.id === "observer_v1") {
-    if (signals.tension) {
+    if (signals.tension || signals.emotionallySensitive) {
       confidence += improved ? 0.52 : 0.38;
-      reasons.push("tension needs a low-ego intervention");
+      reasons.push(
+        signals.emotionallySensitive
+          ? "the room is emotionally sensitive"
+          : "tension needs a low-ego intervention",
+      );
+    }
+    if (signals.chaotic) {
+      confidence += improved ? 0.36 : 0.24;
+      reasons.push("chaotic side threads need a quiet reset");
     }
     if (signals.quietParticipantRisk) {
       confidence += improved ? 0.32 : 0.2;
@@ -759,7 +824,7 @@ function decideForAgent(agent, room, triggerMessage) {
       confidence += improved ? 0.26 : 0.18;
       reasons.push("the room has unresolved constraints");
     }
-    if (!signals.tension && signals.activeHumanExchange) {
+    if (!signals.tension && !signals.emotionallySensitive && signals.activeHumanExchange) {
       confidence -= improved ? 0.38 : 0.18;
       reasons.push("the human exchange should continue");
     }
@@ -1347,17 +1412,36 @@ function extractSignals(room, triggerMessage) {
     combined,
   );
   const tension = /(annoying|hate|no way|can't|stressed|argue|ignored|frustrated|nobody is listening|messy)/.test(combined);
+  const emotionallySensitive =
+    /(hurt|upset|sad|anxious|overwhelmed|burned out|burnt out|not okay|panic|worried|scared|lonely|support|grief|feel awful)/.test(
+      combined,
+    );
   const playful = /(lol|haha|meme|chaos|wild|funny|vibe|party|main character)/.test(combined);
   const derailed = /(pizza|meme|random|whatever|side quest|off topic)/.test(combined);
   const confusion = /(not sure|confused|unclear|what.*priority|what matters)/.test(combined);
   const lowEnergy = recentHuman.length >= 2 && !decisionNeeded && !playful && !tension;
+  const stalled =
+    !decisionNeeded &&
+    !tension &&
+    !emotionallySensitive &&
+    /(stuck|stalled|quiet|dead chat|anyone here|anyone still|what now|no idea|idk|not sure what to say)/.test(
+      combined,
+    );
+  const chaotic =
+    derailed &&
+    !tension &&
+    !emotionallySensitive &&
+    (recentHuman.length >= 2 || /(spiraling|too many threads|random side|off topic)/.test(combined));
   const quietParticipantName = detectQuietParticipant(room);
   const quietParticipantRisk = Boolean(quietParticipantName);
 
   let groupState = "active";
   if (tension) groupState = "tense";
+  else if (emotionallySensitive) groupState = "emotionally_sensitive";
   else if (decisionNeeded) groupState = "decision_needed";
+  else if (chaotic) groupState = "chaotic";
   else if (playful) groupState = "playful";
+  else if (stalled) groupState = "stalled";
   else if (activeHumanExchange) groupState = "high_human_momentum";
   else if (lowEnergy) groupState = "low_human_momentum";
 
@@ -1366,9 +1450,12 @@ function extractSignals(room, triggerMessage) {
     constraints: [...new Set(constraints)],
     decisionNeeded,
     tension,
+    emotionallySensitive,
     playful,
     derailed,
     confusion,
+    stalled,
+    chaotic,
     lowEnergy,
     quietParticipantRisk,
     quietParticipantName,
