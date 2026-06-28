@@ -61,6 +61,19 @@ const room = createRoom("test-room");
 assert.equal(getRoomAgents(room).length, 3, "default room should include three spec agents");
 assert.deepEqual(agentSelectionRules, { min: 2, max: 3 });
 
+const replyRoom = createRoom("reply-room");
+const replyRoot = addHumanMessage(replyRoom, "Alex", "Cheap is the constraint.");
+const humanReply = addHumanMessage(replyRoom, "Jules", "Agreeing with Alex here.", {
+  replyToMessageId: replyRoot.id,
+});
+assert.equal(humanReply.replyToMessageId, replyRoot.id);
+const replyDecisions = evaluateAndRouteAgents(replyRoom, humanReply);
+const replySpeaker = replyDecisions.find((decision) => decision.decision === "speak");
+if (replySpeaker) {
+  const replyAiMessage = createAgentPlaceholder(replyRoom, replySpeaker.agentId, replySpeaker.id);
+  assert.equal(replyAiMessage.replyToMessageId, humanReply.id);
+}
+
 const singleAgentRoom = createRoom("single-agent-request", {
   agentIds: ["observer_v1"],
 });
@@ -270,6 +283,10 @@ assert.ok(
     .filter((message) => message.senderType === "ai")
     .every((message) => message.modelName && message.promptVersion && message.policyVersion && message.decisionId),
   "export transcript should preserve AI model, prompt, policy, and decision metadata",
+);
+assert.ok(
+  exported.transcript.every((message) => "replyToMessageId" in message),
+  "export transcript should preserve reply targeting metadata",
 );
 assert.ok(Array.isArray(exported.room.routingDecisions));
 

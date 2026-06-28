@@ -100,6 +100,7 @@ async function main() {
   );
   assert.ok(aiMessageWrite);
   assert.ok(aiMessageWrite.sql.includes("first_token_latency_ms"));
+  assert.equal(aiMessageWrite.params[8], triggerMessage.id);
   assert.equal(aiMessageWrite.params[10], 250);
   assert.equal(aiMessageWrite.params[11], 42);
   const routingDecisionWrite = fakeClient.queries.find((entry) =>

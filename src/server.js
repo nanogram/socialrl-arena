@@ -192,7 +192,9 @@ async function handleClientEvent(ws, event) {
     if (!content) return;
 
     room.status = "active";
-    const message = addHumanMessage(room, displayName, content);
+    const message = addHumanMessage(room, displayName, content, {
+      replyToMessageId: eventValue(event, "reply_to_message_id", "replyToMessageId"),
+    });
     broadcastRoom(room.id, "message_created", messageEventPayload(message));
     await persistRoom(room);
     broadcastRoom(room.id, "state_snapshot", snapshot(room.id));
@@ -414,8 +416,12 @@ async function runSampleSession(room) {
   await persistRoom(room);
   broadcastRoom(room.id, "state_snapshot", snapshot(room.id));
 
+  let previousHumanMessageId = null;
   for (const [speaker, content] of room.scenario.sampleScript) {
-    const message = addHumanMessage(room, speaker, content);
+    const message = addHumanMessage(room, speaker, content, {
+      replyToMessageId: previousHumanMessageId,
+    });
+    previousHumanMessageId = message.id;
     broadcastRoom(room.id, "message_created", messageEventPayload(message));
     await persistRoom(room);
     broadcastRoom(room.id, "state_snapshot", snapshot(room.id));

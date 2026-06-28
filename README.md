@@ -103,6 +103,7 @@ docker compose exec app npm run migrate:postgres
 - Three agents: Mediator, Vibe Friend, and Observer
 - Room setup enforces 2-3 selected AI Shapes per session
 - WebSocket fanout
+- Reply-to message targeting for human replies and AI responses to trigger messages
 - Agent speak/wait/stay-silent decisions
 - Decision metadata includes target users when a Shape should include a quieter participant
 - Explicit stayed-silent and waited WebSocket events for debug/eval views

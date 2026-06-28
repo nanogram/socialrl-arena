@@ -170,6 +170,10 @@ body[data-view="landing"] .messages {
   display: none;
 }
 
+.reply-preview {
+  display: none;
+}
+
 body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
   display: flex;
   align-items: center;
@@ -225,6 +229,38 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   border-top: 1px solid var(--line);
   padding: 12px 18px;
   background: var(--surface);
+}
+
+.reply-preview:not(:empty) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 8px 16px;
+  background: #f8fbfa;
+}
+
+.reply-preview div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.reply-preview strong,
+.reply-preview span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reply-preview strong {
+  font-size: 12px;
+}
+
+.reply-preview span {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .normal-feedback-card {
@@ -609,6 +645,10 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   text-align: right;
 }
 
+.message-header span:last-child button {
+  margin-left: 8px;
+}
+
 .sender {
   color: var(--text);
   font-weight: 700;
@@ -617,6 +657,27 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 .message p {
   margin: 0;
   line-height: 1.42;
+}
+
+.reply-context {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 8px;
+  border-left: 3px solid var(--line);
+  padding: 6px 8px;
+  background: rgba(237, 242, 240, 0.7);
+}
+
+.reply-context strong,
+.reply-context span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.reply-context span {
+  color: var(--muted);
 }
 
 .streaming::after {

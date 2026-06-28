@@ -8,6 +8,7 @@ const state = {
   displayName: localStorage.getItem("socialrl_display_name") || "Demo Reviewer",
   debugPanelVisible: localStorage.getItem("socialrl_debug_panel") !== "hidden",
   agentThinking: null,
+  replyTargetId: null,
 };
 
 const quickFeedbackOrder = [
@@ -28,6 +29,7 @@ const maxNormalParticipants = 6;
 const messagesEl = document.querySelector("#messages");
 const normalChatBarEl = document.querySelector("#normalChatBar");
 const normalSessionFeedbackEl = document.querySelector("#normalSessionFeedback");
+const replyPreviewEl = document.querySelector("#replyPreview");
 const decisionsEl = document.querySelector("#decisions");
 const routingDecisionsEl = document.querySelector("#routingDecisions");
 const reportEl = document.querySelector("#report");
@@ -69,8 +71,10 @@ messageForm.addEventListener("submit", (event) => {
     type: "send_message",
     display_name: speakerSelect.value,
     content,
+    reply_to_message_id: state.replyTargetId,
   });
   messageInput.value = "";
+  clearReplyTarget();
 });
 
 document.querySelector("#createRoomButton").addEventListener("click", () => {
@@ -316,6 +320,7 @@ function render() {
   renderSetup();
   renderNormalChatBar();
   renderNormalSessionFeedback();
+  renderReplyPreview();
   renderPrimaryPanel();
   renderParticipants();
   renderPolicies();
@@ -759,6 +764,13 @@ function renderMessages() {
       select.value = "";
     });
   });
+  messagesEl.querySelectorAll("[data-reply-to-message]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.replyTargetId = button.dataset.replyToMessage;
+      renderReplyPreview();
+      messageInput.focus();
+    });
+  });
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
@@ -889,14 +901,18 @@ function renderMessage(message) {
     minute: "2-digit",
   });
   const aiClass = message.agentId || "";
-  const version =
+  const versionText =
     message.senderType === "ai"
-      ? `<span>${escapeHtml(message.modelName || "model")} · ${escapeHtml(message.promptVersion || "prompt")} · ${escapeHtml(message.policyVersion || "policy")}</span>`
-      : `<span>${time}</span>`;
+      ? `${message.modelName || "model"} · ${message.promptVersion || "prompt"} · ${message.policyVersion || "policy"}`
+      : time;
   const feedback =
     message.senderType === "ai" && !message.streaming
       ? renderFeedbackControls(message)
       : "";
+  const replyContext = renderReplyContext(message);
+  const replyButton = message.streaming
+    ? ""
+    : `<button type="button" class="quiet inline-button" data-reply-to-message="${message.id}">Reply</button>`;
 
   return `
     <article class="message-row ${message.senderType}">
@@ -904,13 +920,52 @@ function renderMessage(message) {
       <div class="message ${message.senderType} ${aiClass}">
         <div class="message-header">
           <span class="sender">${escapeHtml(message.senderName)}</span>
-          ${version}
+          <span class="message-actions"><span>${escapeHtml(versionText)}</span>${replyButton}</span>
         </div>
+        ${replyContext}
         <p class="${message.streaming ? "streaming" : ""}">${escapeHtml(message.content || " ")}</p>
         ${feedback}
       </div>
     </article>
   `;
+}
+
+function renderReplyContext(message) {
+  if (!message.replyToMessageId || !state.room) return "";
+  const replyTo = state.room.messages.find((candidate) => candidate.id === message.replyToMessageId);
+  if (!replyTo) return "";
+  return `
+    <div class="reply-context">
+      <strong>${escapeHtml(replyTo.senderName)}</strong>
+      <span>${escapeHtml(truncateText(replyTo.content, 110))}</span>
+    </div>
+  `;
+}
+
+function renderReplyPreview() {
+  if (!replyPreviewEl || !state.room || !state.replyTargetId || getViewMode().type !== "chat") {
+    if (replyPreviewEl) replyPreviewEl.innerHTML = "";
+    return;
+  }
+  const target = state.room.messages.find((message) => message.id === state.replyTargetId);
+  if (!target) {
+    clearReplyTarget();
+    return;
+  }
+  replyPreviewEl.innerHTML = `
+    <div>
+      <strong>Replying to ${escapeHtml(target.senderName)}</strong>
+      <span>${escapeHtml(truncateText(target.content, 120))}</span>
+    </div>
+    <button type="button" class="quiet inline-button" data-clear-reply>Clear</button>
+  `;
+  const clearButton = replyPreviewEl.querySelector("[data-clear-reply]");
+  if (clearButton) clearButton.addEventListener("click", clearReplyTarget);
+}
+
+function clearReplyTarget() {
+  state.replyTargetId = null;
+  if (replyPreviewEl) replyPreviewEl.innerHTML = "";
 }
 
 function renderFeedbackControls(message) {
@@ -1711,6 +1766,12 @@ function signed(value) {
 
 function sumObjectValues(values) {
   return Object.values(values || {}).reduce((total, value) => total + Number(value || 0), 0);
+}
+
+function truncateText(value, maxLength) {
+  const text = String(value || "").trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 1))}...`;
 }
 
 function initialsFor(name) {

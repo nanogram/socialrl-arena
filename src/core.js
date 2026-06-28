@@ -430,11 +430,12 @@ function normalizeRoomId(id) {
   return normalized.slice(0, 48) || randomUUID().slice(0, 8);
 }
 
-function addHumanMessage(room, displayName, content) {
+function addHumanMessage(room, displayName, content, options = {}) {
   const message = createMessage(room, {
     senderName: normalizeDisplayName(displayName),
     senderType: "human",
     content,
+    replyToMessageId: normalizeReplyToMessageId(room, options.replyToMessageId),
   });
   room.messages.push(message);
   return message;
@@ -451,6 +452,7 @@ function createAgentPlaceholder(room, agentId, decisionId) {
     agentId,
     content: "",
     decisionId,
+    replyToMessageId: decision ? decision.triggerMessageId : null,
     modelName: messageModel || agent.modelName,
     promptVersion: agent.promptVersion,
     policyVersion: effectiveAgentPolicyVersion(agent, room),
@@ -488,6 +490,11 @@ function createMessage(room, input) {
     feedback: [],
     streaming: false,
   };
+}
+
+function normalizeReplyToMessageId(room, replyToMessageId) {
+  if (!replyToMessageId) return null;
+  return room.messages.some((message) => message.id === replyToMessageId) ? replyToMessageId : null;
 }
 
 function evaluateAndRouteAgents(room, triggerMessage) {
@@ -1881,6 +1888,7 @@ function createExport(room) {
       senderType: message.senderType,
       agentId: message.agentId,
       decisionId: message.decisionId,
+      replyToMessageId: message.replyToMessageId,
       content: message.content,
       createdAt: message.createdAt,
       modelName: message.modelName,

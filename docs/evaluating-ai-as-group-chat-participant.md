@@ -14,7 +14,7 @@ The product loop is:
 6. Apply the generated improved policy.
 7. Rerun the scenario and compare baseline vs improved behavior.
 
-The feedback model is group-chat-native. It captures common message quality labels plus whether the agent helped the group decide, interrupted humans, had good timing, should have stayed quiet, reduced tension, made the chat fun, missed social tension, responded to the wrong person, became too generic, or ignored a quieter participant. Session feedback also records which agent users would route into this type of room next time.
+The feedback model is group-chat-native. It captures common message quality labels plus whether the agent helped the group decide, interrupted humans, had good timing, should have stayed quiet, reduced tension, made the chat fun, missed social tension, responded to the wrong person, became too generic, or ignored a quieter participant. Reply-to metadata preserves which message a human or AI response targeted, so reviewers can evaluate whether the Shape understood who was talking to whom. Session feedback also records which agent users would route into this type of room next time.
 
 Shape Performance Reports score each agent on helpfulness, timing, brevity, personality consistency, social awareness, group momentum, decision impact, human-likeness, fun, and restraint. Reports include a participation decision review that ties recent speak, wait, and stay-silent decisions back to trigger messages, router selection, rule adjustments, and feedback outcomes. They also include best and worst messages, failure modes, policy diffs, routing recommendations, routing success and suitability scores, session feedback summaries, and system performance metrics.
 

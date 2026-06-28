@@ -186,6 +186,8 @@ function demoExportCheck(exported) {
     exported.room &&
     transcript.length > 0 &&
     transcript.every((message) => "feedbackTags" in message) &&
+    transcript.every((message) => "replyToMessageId" in message) &&
+    transcript.some((message) => message.replyToMessageId) &&
     aiTranscript.every(
       (message) => message.decisionId && message.modelName && message.promptVersion && message.policyVersion,
     );
@@ -193,7 +195,9 @@ function demoExportCheck(exported) {
   return {
     name: "demo:export-contract",
     status: ok ? "pass" : "fail",
-    detail: ok ? `${transcript.length} transcript messages exported` : "export JSON missing transcript/model evidence",
+    detail: ok
+      ? `${transcript.length} transcript messages exported`
+      : "export JSON missing transcript/reply/model evidence",
   };
 }
 

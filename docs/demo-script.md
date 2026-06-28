@@ -14,7 +14,7 @@ SocialRL Arena is a realtime eval harness for multiplayer AI. The key question i
 
 In this room, humans are planning a weekend trip. Each AI agent first makes a speak, wait, or stay-silent decision. The router then picks at most one agent for the turn.
 
-Normal chat mode keeps the group-chat experience focused while still showing active participants, invite, end-session, report actions, and the end-of-session feedback prompt. Submitting feedback after the first report refreshes the latest Shape Report. The debug panel shows the participation decisions, confidence, group state, routing reason, selected Shape, blocked Shapes, candidate scores, and rule adjustments. The chat view lets humans tag AI messages with group-chat-native feedback like good timing, helped decide, interrupted, or should have stayed quiet.
+Normal chat mode keeps the group-chat experience focused while still showing active participants, invite, end-session, report actions, and the end-of-session feedback prompt. Humans can reply to a specific message, and AI responses preserve the trigger-message link so reviewers can see who or what the Shape responded to. Submitting feedback after the first report refreshes the latest Shape Report. The debug panel shows the participation decisions, confidence, group state, routing reason, selected Shape, blocked Shapes, candidate scores, and rule adjustments. The chat view lets humans tag AI messages with group-chat-native feedback like good timing, helped decide, interrupted, or should have stayed quiet.
 
 When the session ends, the Shape Report scores each agent on timing, restraint, decision impact, social awareness, fun, and human-likeness. The report also shows model-routing evidence: fast tiers for classification, speak decisions, routing, and feedback aggregation, plus strong tiers for reports, policy repair, and emotionally complex or conflict-heavy responses. The agent-specific Shape page also shows quantitative stats, the participation decision review, failure modes, best and worst messages with surrounding context, policy diffs, routing recommendations, and session-level feedback.
 
@@ -26,6 +26,7 @@ The result is a working loop: live group chat, AI participation decisions, human
 
 - Show normal chat view.
 - Show the landing page and create-room page.
+- Reply to a specific message and show the reply context.
 - Show agent decision stream.
 - Show router candidate scores, selected Shape, blocked Shapes, and rule adjustments.
 - Show the model-routing card in the report.
