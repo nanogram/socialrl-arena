@@ -197,7 +197,20 @@ flowchart LR
   Load["Synthetic WebSocket load test"] --> WS
 ```
 
-## Next Implementation Steps
+## Final Submission Status
 
-- Deploy to a hosted URL.
-- Record the 90-second demo video.
+Local implementation is complete against the saved spec and is checked by:
+
+```bash
+npm run preflight
+npm run load-test:smoke
+npm run load-test:target-artifact
+npm run final-handoff
+```
+
+`npm run final-audit` validates the local package plus the final external links. The remaining submission-only items are:
+
+- Add a GitHub `origin` remote and push this repository.
+- Deploy the app to a public URL.
+- Record the 90-second Loom using `docs/demo-script.md`.
+- Run `npm run final-audit` with `LIVE_DEMO_URL`, `GITHUB_REPO_URL`, and `LOOM_URL`.

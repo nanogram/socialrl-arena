@@ -41,6 +41,7 @@ function checkFiles() {
     "scripts/load-test.js",
     "scripts/demo-seed.js",
     "scripts/final-audit.js",
+    "scripts/final-handoff.js",
   ];
 
   for (const file of required) {
@@ -60,6 +61,7 @@ function checkPackageScripts() {
     "demo:seed",
     "preflight",
     "final-audit",
+    "final-handoff",
   ]) {
     if (!pkg.scripts[script]) throw new Error(`Missing package script: ${script}`);
   }
@@ -79,6 +81,7 @@ function checkSpecMarkers() {
   const loadTest = fs.readFileSync("scripts/load-test.js", "utf8");
   const targetLoad = fs.readFileSync("scripts/run-target-load.js", "utf8");
   const finalAudit = fs.readFileSync("scripts/final-audit.js", "utf8");
+  const finalHandoff = fs.readFileSync("scripts/final-handoff.js", "utf8");
   const pkg = fs.readFileSync("package.json", "utf8");
 
   for (const [file, body, markers] of [
@@ -92,11 +95,12 @@ function checkSpecMarkers() {
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "recordProviderFailure", "routerModelName"]],
     ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["buildReportEvalInputs", "fullTranscript", "messageLatency", "evidenceManifest", "emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
-    ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports"]],
+    ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports", "Final Submission Status", "LIVE_DEMO_URL", "GITHUB_REPO_URL", "LOOM_URL"]],
     ["scripts/load-test.js", loadTest, ["lastAiMessageId", "LOAD_TEST_OUTPUT_PATH", "passed"]],
     ["scripts/run-target-load.js", targetLoad, ["SOCIALRL_STORAGE", "target-load-latest.json", "LOAD_TEST_MESSAGES_PER_ROOM"]],
     ["scripts/final-audit.js", finalAudit, ["aiOnlyFeedbackCheck", "demoScenarioFidelityCheck", "reportJudgePromptCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
-    ["package.json", pkg, ["load-test:target-artifact"]],
+    ["scripts/final-handoff.js", finalHandoff, ["SocialRL Arena Final Handoff", "Target Load Evidence", "Final Audit", "Reviewer Path"]],
+    ["package.json", pkg, ["load-test:target-artifact", "final-handoff"]],
   ]) {
     for (const marker of markers) {
       if (!body.includes(marker)) throw new Error(`${file} missing spec marker: ${marker}`);
