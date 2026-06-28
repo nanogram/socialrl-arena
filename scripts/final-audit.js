@@ -9,6 +9,7 @@ const requiredFiles = [
   "docs/evaluating-ai-as-group-chat-participant.md",
   "docs/final-deliverable.md",
   "docs/index.html",
+  "docs/assets/socialrl-demo.gif",
   "docs/assets/socialrl-demo.mp4",
   "docs/performance-report.md",
   "docs/public-deployment-checklist.md",

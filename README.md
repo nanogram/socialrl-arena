@@ -13,9 +13,9 @@ This implementation uses deterministic local agents by default so the product lo
 
 ## Demo Video
 
-<video controls src="https://nanogram.github.io/socialrl-arena/assets/socialrl-demo.mp4" title="SocialRL Arena demo video"></video>
+![SocialRL Arena demo preview](https://nanogram.github.io/socialrl-arena/assets/socialrl-demo.gif)
 
-If the embedded player does not render in your GitHub view, open the [demo video page](https://nanogram.github.io/socialrl-arena/) or the [direct MP4](https://nanogram.github.io/socialrl-arena/assets/socialrl-demo.mp4).
+Open the [demo video page](https://nanogram.github.io/socialrl-arena/) or the [direct MP4](https://nanogram.github.io/socialrl-arena/assets/socialrl-demo.mp4) for video controls.
 
 ## Run Locally
 
