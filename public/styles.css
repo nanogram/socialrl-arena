@@ -888,6 +888,11 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   border-bottom: 0;
 }
 
+.toolbar.setup-actions {
+  padding: 0;
+  border-bottom: 0;
+}
+
 .panel-section {
   min-height: 0;
   overflow: hidden;

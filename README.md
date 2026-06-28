@@ -34,11 +34,14 @@ npm run load-test:smoke
 npm run load-test:target
 npm run load-test:target-artifact
 npm run demo:seed
+npm run demo:record
 npm run preflight
 npm run final-audit:local
 npm run final-audit
 npm run final-handoff
 ```
+
+`npm run demo:record` starts a memory-backed local server, seeds a fresh weekend-trip demo room, records the walkthrough, and regenerates `docs/assets/socialrl-demo.mp4` plus `docs/assets/socialrl-demo.gif`. Playwright and browser binaries are installed under `.local-tools` if they are missing, not globally.
 
 For a clean local target load run, start the server with in-memory storage in one terminal:
 

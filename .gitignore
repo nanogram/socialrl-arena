@@ -5,3 +5,4 @@ demo-artifacts/
 .env.*
 !.env.example
 npm-debug.log*
+.local-tools/

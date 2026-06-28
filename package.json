@@ -14,6 +14,7 @@
     "load-test:target": "LOAD_TEST_ROOMS=100 LOAD_TEST_USERS_PER_ROOM=3 LOAD_TEST_MESSAGES_PER_ROOM=10 node scripts/load-test.js",
     "load-test:target-artifact": "node scripts/run-target-load.js",
     "demo:seed": "node scripts/demo-seed.js",
+    "demo:record": "node scripts/record-demo-media.js",
     "preflight": "node scripts/preflight.js",
     "final-audit": "node scripts/final-audit.js",
     "final-audit:local": "FINAL_AUDIT_LOCAL_ONLY=1 node scripts/final-audit.js",
