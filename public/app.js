@@ -575,13 +575,19 @@ function renderShapePage(agentId) {
           <strong>${escapeHtml(shape.agentName)}</strong>
           <span class="status-pill">${escapeHtml(shape.role)}</span>
         </div>
+        <p><strong>${escapeHtml(report.scenarioTitle)}</strong> · ${escapeHtml(report.policyMode)} · Run ${report.sessionNumber}</p>
         <p>${escapeHtml(shape.summary)}</p>
+        <p>
+          ${escapeHtml(shape.modelName || "model")} · ${escapeHtml(shape.promptVersion || "prompt")} · ${escapeHtml(shape.policyVersion || "policy")}
+        </p>
         <div class="metric-grid">
           ${Object.entries(shape.scorecard)
             .map(([label, value]) => metric(formatTag(label), value))
             .join("")}
         </div>
       </article>
+      ${renderShapeStats(shape)}
+      ${renderFailureModeCard(shape)}
       <article class="report-card">
         <div class="report-title"><strong>Policy Diff</strong></div>
         <p><strong>Before:</strong> ${escapeHtml(shape.policyDiff.before)}</p>
@@ -592,8 +598,10 @@ function renderShapePage(agentId) {
         <div class="report-title"><strong>Routing Recommendation</strong></div>
         <p>${escapeHtml(shape.routingRecommendation.reason)}</p>
         <div class="tag-list">
-          ${shape.routingRecommendation.recommendedFor.map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join("")}
+          ${(shape.routingRecommendation.recommendedFor || []).map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join("")}
         </div>
+        <p><strong>Avoid:</strong> ${(shape.routingRecommendation.avoidFor || []).map(escapeHtml).join(", ") || "No avoid list yet."}</p>
+        <p><strong>Route next time:</strong> ${shape.routingRecommendation.routeNextTime ? "Yes" : "No"}</p>
         ${renderRoutingScores(shape.routingScores)}
       </article>
       ${renderMessageExamples("Best Messages", shape.bestMessages)}
@@ -1011,6 +1019,48 @@ function renderRoutingScores(scores) {
   `;
 }
 
+function renderShapeStats(agentReport) {
+  const stats = agentReport.stats;
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Quantitative Stats</strong></div>
+      <div class="metric-grid">
+        ${metric("Messages", stats.totalMessages)}
+        ${metric("Avg words", stats.averageMessageWords)}
+        ${metric("Avg latency", `${stats.averageResponseLatencyMs} ms`)}
+        ${metric("Speak", stats.speakDecisions)}
+        ${metric("Silent", stats.staySilentDecisions)}
+        ${metric("Wait", stats.waitDecisions)}
+        ${metric("Speak/silent", stats.speakStaySilentRatio)}
+        ${metric("Positive", `${Math.round(stats.positiveFeedbackRate * 100)}%`)}
+        ${metric("Negative", `${Math.round(stats.negativeFeedbackRate * 100)}%`)}
+        ${metric("Interruption", `${Math.round(stats.interruptionRate * 100)}%`)}
+        ${metric("Helped decide", `${Math.round(stats.decisionHelpfulnessRate * 100)}%`)}
+        ${metric("Stay quiet", `${Math.round(stats.shouldHaveStayedQuietRate * 100)}%`)}
+        ${metric("Human before", stats.humanMessagesBeforeAiMessages)}
+        ${metric("Human after", stats.humanMessagesAfterAiMessages)}
+        ${metric("Route success", `${Math.round(stats.routingSuccessRate * 100)}%`)}
+      </div>
+      <div class="tag-list">
+        ${Object.entries(stats.feedbackTagCounts)
+          .map(([tag, count]) => `<span class="tag">${formatTag(tag)} ${count}</span>`)
+          .join("") || `<span class="tag">No feedback tags</span>`}
+      </div>
+    </article>
+  `;
+}
+
+function renderFailureModeCard(agentReport) {
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Failure Modes</strong></div>
+      <div class="tag-list">
+        ${agentReport.failureModes.map((mode) => `<span class="tag">${escapeHtml(mode)}</span>`).join("")}
+      </div>
+    </article>
+  `;
+}
+
 function renderMessageExamples(title, examples) {
   if (!examples || !examples.length) {
     return `
@@ -1030,6 +1080,7 @@ function renderMessageExamples(title, examples) {
             <p><strong>${escapeHtml(example.feedbackTags.join(", "))}</strong></p>
             <p>${escapeHtml(example.text)}</p>
             <p>${escapeHtml(example.why)}</p>
+            ${renderExampleContext(example.surroundingContext)}
             ${
               example.whatShouldHaveDoneInstead
                 ? `<p><strong>Instead:</strong> ${escapeHtml(example.whatShouldHaveDoneInstead)}</p>`
@@ -1039,6 +1090,25 @@ function renderMessageExamples(title, examples) {
         )
         .join("")}
     </article>
+  `;
+}
+
+function renderExampleContext(context) {
+  if (!Array.isArray(context) || !context.length) return "";
+  return `
+    <div class="example-context">
+      ${context
+        .map(
+          (message) => `
+            <div>
+              <strong>${escapeHtml(message.senderName)}</strong>
+              <span>${escapeHtml(message.senderType)}</span>
+              <p>${escapeHtml(message.content)}</p>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
   `;
 }
 

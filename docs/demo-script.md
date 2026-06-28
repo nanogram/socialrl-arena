@@ -15,7 +15,7 @@ In this room, humans are planning a weekend trip. Each AI agent first makes a sp
 
 The debug panel shows the participation decisions, confidence, group state, routing reason, selected Shape, blocked Shapes, candidate scores, and rule adjustments. The chat view lets humans tag AI messages with group-chat-native feedback like good timing, helped decide, interrupted, or should have stayed quiet.
 
-When the session ends, the Shape Report scores each agent on timing, restraint, decision impact, social awareness, fun, and human-likeness. It also shows failure modes, best and worst messages, policy diffs, routing recommendations, and session-level feedback.
+When the session ends, the Shape Report scores each agent on timing, restraint, decision impact, social awareness, fun, and human-likeness. The agent-specific Shape page also shows quantitative stats, failure modes, best and worst messages with surrounding context, policy diffs, routing recommendations, and session-level feedback.
 
 Now apply the improved policy and rerun the same scenario. The comparison shows whether the system reduced over-participation and improved decision usefulness.
 
