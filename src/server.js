@@ -356,7 +356,7 @@ async function orchestrateAgents(room, triggerMessage) {
   decisions
     .filter((decision) => decision.decision !== "speak")
     .forEach((decision) =>
-      broadcastRoom(room.id, "agent_stayed_silent", {
+      broadcastRoom(room.id, decision.decision === "stay_silent" ? "agent_stayed_silent" : "agent_waited", {
         agent_id: decision.agentId,
         agentId: decision.agentId,
         agent_name: decision.agentName,

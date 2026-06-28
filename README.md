@@ -102,7 +102,7 @@ docker compose exec app npm run migrate:postgres
 - Room setup enforces 2-3 selected AI Shapes per session
 - WebSocket fanout
 - Agent speak/wait/stay-silent decisions
-- Explicit stayed-silent WebSocket events for debug/eval views
+- Explicit stayed-silent and waited WebSocket events for debug/eval views
 - Router decision panel with selected Shape, blocked Shapes, group state, and candidate scores
 - Rule-based router policy for planning, tense, playful/high-momentum, and feedback-adjusted turns
 - Streaming AI message simulation
