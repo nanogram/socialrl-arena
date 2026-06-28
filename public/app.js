@@ -27,6 +27,7 @@ const maxNormalParticipants = 6;
 
 const messagesEl = document.querySelector("#messages");
 const normalChatBarEl = document.querySelector("#normalChatBar");
+const normalSessionFeedbackEl = document.querySelector("#normalSessionFeedback");
 const decisionsEl = document.querySelector("#decisions");
 const routingDecisionsEl = document.querySelector("#routingDecisions");
 const reportEl = document.querySelector("#report");
@@ -314,6 +315,7 @@ function render() {
   renderStatus();
   renderSetup();
   renderNormalChatBar();
+  renderNormalSessionFeedback();
   renderPrimaryPanel();
   renderParticipants();
   renderPolicies();
@@ -395,6 +397,78 @@ function copyInviteLink() {
   }
   inviteLinkInput.value = inviteUrl;
   inviteLinkInput.select();
+}
+
+function renderNormalSessionFeedback() {
+  const room = state.room;
+  if (!room || getViewMode().type !== "chat" || room.status !== "ended") {
+    normalSessionFeedbackEl.innerHTML = "";
+    return;
+  }
+
+  const responseCount = room.sessionFeedback.length;
+  normalSessionFeedbackEl.innerHTML = `
+    <form class="normal-feedback-card" data-normal-session-feedback-form>
+      <div>
+        <strong>Session Feedback</strong>
+        <span>${responseCount} submitted</span>
+      </div>
+      <div class="normal-feedback-grid">
+        <label>
+          <span>Most useful</span>
+          <select name="mostUsefulAgentId">${normalAgentOptions(room.agents)}</select>
+        </label>
+        <label>
+          <span>Most annoying</span>
+          <select name="mostAnnoyingAgentId">${normalAgentOptions(room.agents)}</select>
+        </label>
+        <label>
+          <span>Route next</span>
+          <select name="routeNextAgentId">${normalAgentOptions(room.agents)}</select>
+        </label>
+        <label>
+          <span>Humans talked</span>
+          <select name="humansTalkedMoreOrLess">
+            <option value="more">More</option>
+            <option value="same">Same</option>
+            <option value="less">Less</option>
+            <option value="unsure">Unsure</option>
+          </select>
+        </label>
+      </div>
+      <div class="check-row normal-check-row">
+        <label><input name="didReachDecision" type="checkbox" /> Reached decision</label>
+        <label><input name="wouldInviteAgain" type="checkbox" /> Would invite again</label>
+      </div>
+      <textarea name="freeformNotes" rows="2" placeholder="Notes for the report"></textarea>
+      <button type="submit">Submit Feedback</button>
+    </form>
+  `;
+
+  const form = normalSessionFeedbackEl.querySelector("[data-normal-session-feedback-form]");
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    send({
+      type: "add_session_feedback",
+      most_useful_agent_id: form.elements.mostUsefulAgentId.value || null,
+      most_annoying_agent_id: form.elements.mostAnnoyingAgentId.value || null,
+      route_next_agent_id: form.elements.routeNextAgentId.value || null,
+      did_reach_decision: form.elements.didReachDecision.checked,
+      would_invite_again: form.elements.wouldInviteAgain.checked,
+      humans_talked_more_or_less: form.elements.humansTalkedMoreOrLess.value,
+      freeform_notes: form.elements.freeformNotes.value,
+    });
+    form.elements.freeformNotes.value = "";
+  });
+}
+
+function normalAgentOptions(agents) {
+  return (
+    `<option value="">None</option>` +
+    agents
+      .map((agent) => `<option value="${agent.id}">${escapeHtml(agent.name)}</option>`)
+      .join("")
+  );
 }
 
 function renderStatus() {

@@ -75,8 +75,8 @@ function checkSpecMarkers() {
   const env = fs.readFileSync(".env.example", "utf8");
 
   for (const [file, body, markers] of [
-    ["public/index.html", html, ["debugToggleButton", "displayNameInput", "normalChatBar", "participants", "policies", "routingDecisions"]],
-    ["public/app.js", app, ["AI Shape", "basePersonality", "candidateScores", "comparisonColumn", "copyInviteLink", "renderExampleContext", "renderFailureModeCard", "renderNormalChatBar", "renderParticipants", "renderPolicies", "renderRuleAdjustments", "renderRoutingDecisions", "renderShapeStats", "renderThinkingState", "socialrl_debug_panel", "socialrl_display_name"]],
+    ["public/index.html", html, ["debugToggleButton", "displayNameInput", "normalChatBar", "normalSessionFeedback", "participants", "policies", "routingDecisions"]],
+    ["public/app.js", app, ["AI Shape", "basePersonality", "candidateScores", "comparisonColumn", "copyInviteLink", "normalAgentOptions", "renderExampleContext", "renderFailureModeCard", "renderNormalChatBar", "renderNormalSessionFeedback", "renderParticipants", "renderPolicies", "renderRuleAdjustments", "renderRoutingDecisions", "renderShapeStats", "renderThinkingState", "socialrl_debug_panel", "socialrl_display_name"]],
     ["src/server.js", server, ["addMessageAliases", "agent_stayed_silent", "eventValue", "message_stream_delta", "report_url", "resolveEventRoom", "sender_name"]],
     ["src/core.js", core, ["activePolicyOverrides", "applyRoutingPolicy", "generateImprovedPolicy", "pickRoutedWinner", "routingScores", "p99FullResponseLatencyMs", "routeNextAgentCounts"]],
     ["src/storage.js", storage, ["firstTokenLatencyMs", "first_token_latency_ms", "insertRoutingDecisions", "insertReportJobs", "routing_decisions", "report_jobs"]],

@@ -150,6 +150,10 @@ body[data-view="chat"][data-debug-panel="hidden"] .message {
   display: none;
 }
 
+.normal-session-feedback {
+  display: none;
+}
+
 body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
   display: flex;
   align-items: center;
@@ -198,6 +202,57 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
 .normal-participant.more {
   padding: 0 9px;
   color: var(--muted);
+}
+
+body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:empty) {
+  display: block;
+  border-top: 1px solid var(--line);
+  padding: 12px 18px;
+  background: var(--surface);
+}
+
+.normal-feedback-card {
+  display: grid;
+  gap: 10px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.normal-feedback-card > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.normal-feedback-card > div:first-child span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.normal-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.normal-feedback-card label {
+  display: grid;
+  gap: 4px;
+}
+
+.normal-feedback-card label span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.normal-feedback-card textarea {
+  min-height: 56px;
+}
+
+.normal-feedback-card button {
+  justify-self: end;
 }
 
 .messages {
@@ -892,8 +947,13 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
   }
 
   .setup-grid,
+  .normal-feedback-grid,
   .check-row {
     grid-template-columns: 1fr;
+  }
+
+  .normal-feedback-card button {
+    justify-self: stretch;
   }
 
   .room-list-item {

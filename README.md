@@ -109,6 +109,7 @@ docker compose exec app npm run migrate:postgres
 - WebSocket client events accept spec-style snake_case and camelCase field names, including event-level `room_id`
 - Full message feedback taxonomy for timing, social awareness, usefulness, personality, and message quality
 - Session-level feedback, including route-next agent preference
+- Normal-mode end-of-session feedback prompt for useful/annoying/route-next/reached-decision/invite-again signals
 - Shape Performance Reports
 - Agent routing success, messages-per-minute, human-before/after, and suitability scores
 - Report-generated policy diffs carried into the improved-policy rerun
