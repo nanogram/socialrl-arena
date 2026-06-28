@@ -21,6 +21,7 @@ function checkFiles() {
     ".github/workflows/ci.yml",
     "Dockerfile",
     "docker-compose.yml",
+    "render.yaml",
     ".env.example",
     "db/schema.sql",
     "docs/demo-script.md",
@@ -69,6 +70,7 @@ function checkSpecMarkers() {
   const core = fs.readFileSync("src/core.js", "utf8");
   const storage = fs.readFileSync("src/storage.js", "utf8");
   const schema = fs.readFileSync("db/schema.sql", "utf8");
+  const render = fs.readFileSync("render.yaml", "utf8");
   const provider = fs.readFileSync("src/llmProvider.js", "utf8");
   const env = fs.readFileSync(".env.example", "utf8");
 
@@ -79,6 +81,7 @@ function checkSpecMarkers() {
     ["src/core.js", core, ["activePolicyOverrides", "applyRoutingPolicy", "generateImprovedPolicy", "pickRoutedWinner", "routingScores", "p99FullResponseLatencyMs", "routeNextAgentCounts"]],
     ["src/storage.js", storage, ["firstTokenLatencyMs", "first_token_latency_ms", "insertRoutingDecisions", "insertReportJobs", "routing_decisions", "report_jobs"]],
     ["db/schema.sql", schema, ["create table if not exists routing_decisions", "create table if not exists report_jobs", "first_token_latency_ms"]],
+    ["render.yaml", render, ["healthCheckPath: /api/health", "fromDatabase:", "socialrl-arena-db"]],
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "routerModelName"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
   ]) {

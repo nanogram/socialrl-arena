@@ -66,6 +66,26 @@ LLM_REPORT_URL=https://model.example/report
 
 Missing model endpoints fall back to the deterministic local implementation for that stage.
 
+## Render Blueprint
+
+This repository includes `render.yaml` for a hosted web service plus managed Postgres database.
+
+1. Push the repository to GitHub.
+2. In Render, create a new Blueprint from the repository.
+3. Confirm the generated `DATABASE_URL` environment variable points at `socialrl-arena-db`.
+4. After deploy, verify:
+
+```bash
+curl https://<render-host>/api/health
+curl https://<render-host>/api/ready
+```
+
+5. Seed a reviewer room:
+
+```bash
+DEMO_BASE_URL=https://<render-host> npm run demo:seed
+```
+
 ## Verification
 
 ```bash

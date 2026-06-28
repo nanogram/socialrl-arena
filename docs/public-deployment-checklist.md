@@ -15,6 +15,8 @@ Confirm the CI workflow passes on GitHub Actions.
 
 Deploy the app as a Node or Docker web service.
 
+Fast path: use the included `render.yaml` blueprint to create the web service and managed Postgres database from the GitHub repository.
+
 Required runtime settings:
 
 ```bash

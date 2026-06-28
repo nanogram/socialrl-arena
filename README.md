@@ -128,6 +128,7 @@ docker compose exec app npm run migrate:postgres
 - Synthetic WebSocket load test with message acknowledgement, first-token, feedback acknowledgement, report throughput, and socket-stability metrics
 - Reported p50/p95/p99 fanout, first-token, and full-response latency fields
 - Docker Compose deployment path
+- Render blueprint for hosted web service plus managed Postgres
 - 90-second demo script
 - One-page writeup: `docs/evaluating-ai-as-group-chat-participant.md`
 - Performance report: `docs/performance-report.md`
