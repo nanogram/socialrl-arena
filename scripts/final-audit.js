@@ -24,7 +24,7 @@ function main() {
   const checks = [
     ...requiredFiles.map((file) => fileCheck(file)),
     gitRemoteCheck(),
-    latestDemoArtifactCheck(),
+    ...latestDemoArtifactChecks(),
     ...requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label)),
   ];
   const failed = checks.filter((check) => check.status !== "pass");
@@ -53,10 +53,10 @@ function gitRemoteCheck() {
   }
 }
 
-function latestDemoArtifactCheck() {
+function latestDemoArtifactChecks() {
   const dir = path.join(process.cwd(), "demo-artifacts");
   if (!fs.existsSync(dir)) {
-    return { name: "demo:latest-artifacts", status: "fail", detail: "demo-artifacts missing" };
+    return [{ name: "demo:latest-artifacts", status: "fail", detail: "demo-artifacts missing" }];
   }
 
   const links = fs
@@ -66,17 +66,119 @@ function latestDemoArtifactCheck() {
     .sort((left, right) => right.stat.mtimeMs - left.stat.mtimeMs);
 
   if (!links.length) {
-    return { name: "demo:latest-artifacts", status: "fail", detail: "run npm run demo:seed" };
+    return [{ name: "demo:latest-artifacts", status: "fail", detail: "run npm run demo:seed" }];
   }
 
   const latestLinks = links[0].file;
   const roomId = latestLinks.replace(/-links\.md$/, "");
   const exportPath = path.join(dir, `${roomId}-export.json`);
+  const checks = [
+    {
+      name: "demo:latest-artifacts",
+      status: fs.existsSync(exportPath) ? "pass" : "fail",
+      detail: fs.existsSync(exportPath) ? `${latestLinks} + export JSON` : `${latestLinks} has no export JSON`,
+    },
+  ];
+
+  if (!fs.existsSync(exportPath)) return checks;
+
+  let exported;
+  try {
+    exported = JSON.parse(fs.readFileSync(exportPath, "utf8"));
+  } catch (error) {
+    return [
+      ...checks,
+      { name: "demo:export-json", status: "fail", detail: `invalid JSON: ${error.message}` },
+    ];
+  }
+
+  return [
+    ...checks,
+    freshArtifactCheck(exportPath, links[0].stat),
+    demoContentCheck(exported),
+    demoReportCheck(exported),
+    demoExportCheck(exported),
+  ];
+}
+
+function freshArtifactCheck(exportPath, linksStat) {
+  const commitMs = Number(execFileSync("git", ["log", "-1", "--format=%ct"], { encoding: "utf8" }).trim()) * 1000;
+  const exportMs = fs.statSync(exportPath).mtimeMs;
+  const linksMs = linksStat.mtimeMs;
+  const fresh = exportMs >= commitMs && linksMs >= commitMs;
   return {
-    name: "demo:latest-artifacts",
-    status: fs.existsSync(exportPath) ? "pass" : "fail",
-    detail: fs.existsSync(exportPath) ? `${latestLinks} + export JSON` : `${latestLinks} has no export JSON`,
+    name: "demo:fresh-after-head",
+    status: fresh ? "pass" : "fail",
+    detail: fresh ? "latest demo was generated after the current commit" : "rerun npm run demo:seed",
   };
+}
+
+function demoContentCheck(exported) {
+  const room = exported.room || {};
+  const latestReport = latest(room.reports);
+  const ok =
+    room.policyMode === "improved" &&
+    Array.isArray(room.reports) &&
+    room.reports.length >= 2 &&
+    Array.isArray(latestReport && latestReport.comparison) &&
+    latestReport.comparison.length > 0 &&
+    Array.isArray(room.routingDecisions) &&
+    room.routingDecisions.length > 0 &&
+    Array.isArray(room.decisions) &&
+    room.decisions.some((decision) => decision.route && decision.route.routingDecisionId);
+
+  return {
+    name: "demo:before-after-loop",
+    status: ok ? "pass" : "fail",
+    detail: ok
+      ? `${room.reports.length} reports, ${latestReport.comparison.length} comparison rows`
+      : "demo export must include improved run, comparison rows, routed decisions, and route metadata",
+  };
+}
+
+function demoReportCheck(exported) {
+  const room = exported.room || {};
+  const latestReport = latest(room.reports) || {};
+  const performance = latestReport.systemPerformance || {};
+  const agentReports = Array.isArray(latestReport.agents) ? latestReport.agents : [];
+  const ok =
+    room.agentSelectionRules &&
+    room.agentSelectionRules.min === 2 &&
+    room.agentSelectionRules.max === 3 &&
+    performance.roomsTracked !== undefined &&
+    performance.p99FirstTokenLatencyMs !== undefined &&
+    performance.p99FullResponseLatencyMs !== undefined &&
+    agentReports.every((agent) => agent.routingScores && agent.routingRecommendation) &&
+    agentReports.some(
+      (agent) => agent.routingRecommendation && agent.routingRecommendation.sessionFeedback,
+    );
+
+  return {
+    name: "demo:report-contract",
+    status: ok ? "pass" : "fail",
+    detail: ok
+      ? `${agentReports.length} agent reports include routing/performance evidence`
+      : "latest report missing agent selection rules, routing feedback, routing scores, or system performance fields",
+  };
+}
+
+function demoExportCheck(exported) {
+  const ok =
+    exported.exportedAt &&
+    exported.room &&
+    Array.isArray(exported.transcript) &&
+    exported.transcript.length > 0 &&
+    exported.transcript.every((message) => "feedbackTags" in message);
+
+  return {
+    name: "demo:export-contract",
+    status: ok ? "pass" : "fail",
+    detail: ok ? `${exported.transcript.length} transcript messages exported` : "export JSON missing transcript evidence",
+  };
+}
+
+function latest(items) {
+  return Array.isArray(items) && items.length ? items[items.length - 1] : null;
 }
 
 function envUrlCheck(name, label) {
