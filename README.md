@@ -131,6 +131,7 @@ docker compose exec app npm run migrate:postgres
 - Versioned decision/router/message/report judge prompt templates
 - Synthetic WebSocket load test with message acknowledgement, first-token, feedback acknowledgement, report throughput, and socket-stability metrics
 - Reported p50/p95/p99 fanout, first-token, and full-response latency fields
+- Reports include live active-room and process room-count context from the server worker
 - Docker Compose deployment path
 - Render blueprint for hosted web service plus managed Postgres
 - 90-second demo script

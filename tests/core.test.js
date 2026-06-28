@@ -110,7 +110,7 @@ addSessionFeedback(
   "test_user",
 );
 
-const report = buildReport(room);
+const report = buildReport(room, { systemContext: { activeRooms: 4, roomsTracked: 9 } });
 const mediatorReport = report.agents.find((agent) => agent.agentId === "mediator_v1");
 
 assert.equal(report.policyMode, "baseline");
@@ -156,6 +156,8 @@ for (const key of [
   assert.ok(key in report.systemPerformance, `system performance should include ${key}`);
 }
 assert.ok(Number.isFinite(report.systemPerformance.messagesPerSecond));
+assert.equal(report.systemPerformance.activeRooms, 4);
+assert.equal(report.systemPerformance.roomsTracked, 9);
 assert.ok(report.systemPerformance.reportGeneratedLocally);
 
 addSessionFeedback(

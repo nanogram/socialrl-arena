@@ -910,7 +910,7 @@ function buildReport(room, options = {}) {
     summary: summarizeSession(agentReports, room),
     roomStats: buildRoomStats(room),
     sessionFeedbackSummary: summarizeSessionFeedback(room),
-    systemPerformance: buildSystemPerformance(room),
+    systemPerformance: buildSystemPerformance(room, options.systemContext),
     agents: agentReports,
     comparison: previousReport ? compareReports(previousReport, agentReports) : [],
   };
@@ -924,9 +924,9 @@ function buildReport(room, options = {}) {
   return report;
 }
 
-function refreshLatestReport(room) {
-  if (!room.reports.length) return buildReport(room);
-  return buildReport(room, { replaceLatest: true });
+function refreshLatestReport(room, options = {}) {
+  if (!room.reports.length) return buildReport(room, options);
+  return buildReport(room, { ...options, replaceLatest: true });
 }
 
 function buildAgentReport(room, agent) {
@@ -1240,7 +1240,7 @@ function buildRoomStats(room) {
   };
 }
 
-function buildSystemPerformance(room) {
+function buildSystemPerformance(room, systemContext = {}) {
   const aiMessages = room.messages.filter((message) => message.senderType === "ai");
   const fullLatencies = aiMessages.map((message) => message.latencyMs || 0);
   const firstTokenLatencies = aiMessages.map((message) => message.firstTokenLatencyMs || message.latencyMs || 0);
@@ -1250,12 +1250,19 @@ function buildSystemPerformance(room) {
   const queueDepths = room.reportJobs.map((job) => Number(job.queueDepthAtEnqueue || 0));
   const totalLlmCalls = Math.max(1, room.decisions.length + aiMessages.length + room.reportJobs.length);
   const totalConnections = Math.max(1, metrics.websocketConnections);
+  const activeRooms =
+    systemContext.activeRooms === undefined ? 1 : Math.max(0, Number(systemContext.activeRooms || 0));
+  const roomsTracked =
+    systemContext.roomsTracked === undefined
+      ? Math.max(1, activeRooms)
+      : Math.max(0, Number(systemContext.roomsTracked || 0));
   return {
     websocketConnectionsTracked: room.participants.size,
     websocketConnectionsTotal: metrics.websocketConnections,
     websocketDisconnects: metrics.websocketDisconnects,
     reconnectRate: round(metrics.websocketDisconnects / totalConnections),
-    activeRooms: 1,
+    activeRooms,
+    roomsTracked,
     messagesPerSecond: estimateMessagesPerSecond(room.messages),
     p50FanoutLatencyMs: round(percentile(metrics.fanoutLatenciesMs, 0.5)),
     p95FanoutLatencyMs: round(percentile(metrics.fanoutLatenciesMs, 0.95)),

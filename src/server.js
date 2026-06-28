@@ -721,6 +721,13 @@ function roomSummary(room) {
   };
 }
 
+function currentSystemContext() {
+  return {
+    activeRooms: [...rooms.values()].filter((room) => room.status === "active").length,
+    roomsTracked: rooms.size,
+  };
+}
+
 function enqueueReport(room, source, options = {}) {
   const job = {
     id: randomUUID(),
@@ -761,10 +768,11 @@ function runReportWorker() {
 
       try {
         await delay(25);
+        const systemContext = currentSystemContext();
         const draftReport =
           job.source === "session_feedback_refresh" && room.reports.length
-            ? refreshLatestReport(room)
-            : buildReport(room);
+            ? refreshLatestReport(room, { systemContext })
+            : buildReport(room, { systemContext });
         const judgedReport = await llmProvider.judgeReport({
           room,
           draftReport,

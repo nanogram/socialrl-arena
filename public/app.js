@@ -722,6 +722,7 @@ function renderSystemPerformance(performance = {}) {
       <div class="report-title"><strong>System Performance</strong></div>
       <div class="metric-grid">
         ${metric("Active rooms", performance.activeRooms || 0)}
+        ${metric("Rooms tracked", performance.roomsTracked || performance.activeRooms || 0)}
         ${metric("Msg/sec", performance.messagesPerSecond || 0)}
         ${metric("WS total", performance.websocketConnectionsTotal || 0)}
         ${metric("Reconnect", formatPercentValue(performance.reconnectRate))}
