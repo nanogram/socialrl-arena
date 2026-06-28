@@ -107,8 +107,18 @@ async function main() {
   );
   assert.ok(routingDecisionWrite);
   assert.equal(routingDecisionWrite.params[1], "persisted-room");
-  assert.ok(routingDecisionWrite.params[10].includes("agentId"));
-  assert.ok(Array.isArray(routingDecisionWrite.params[11]));
+  assert.ok(routingDecisionWrite.sql.includes("model_routing"));
+  const persistedRouteModelRouting = JSON.parse(routingDecisionWrite.params[10]);
+  assert.equal(persistedRouteModelRouting.decision.tier, "fast");
+  assert.ok(routingDecisionWrite.params[11].includes("agentId"));
+  assert.ok(Array.isArray(routingDecisionWrite.params[12]));
+  const agentDecisionWrite = fakeClient.queries.find((entry) =>
+    entry.sql.startsWith("insert into agent_decisions"),
+  );
+  assert.ok(agentDecisionWrite);
+  assert.ok(agentDecisionWrite.sql.includes("model_routing"));
+  const persistedDecisionModelRouting = JSON.parse(agentDecisionWrite.params[14]);
+  assert.equal(persistedDecisionModelRouting.decision.tier, "fast");
   const reportJobWrite = fakeClient.queries.find((entry) =>
     entry.sql.startsWith("insert into report_jobs"),
   );
@@ -122,6 +132,13 @@ async function main() {
   assert.ok(sessionFeedbackWrite);
   assert.ok(sessionFeedbackWrite.sql.includes("route_next_agent_id"));
   assert.ok(sessionFeedbackWrite.params.includes("observer_v1"));
+  const roomReportWrite = fakeClient.queries.find((entry) =>
+    entry.sql.startsWith("insert into room_reports"),
+  );
+  assert.ok(roomReportWrite);
+  assert.ok(roomReportWrite.sql.includes("model_routing_summary"));
+  const persistedModelRoutingSummary = JSON.parse(roomReportWrite.params[7]);
+  assert.equal(persistedModelRoutingSummary.latestPlan.report.tier, "strong");
   const agentReportWrite = fakeClient.queries.find((entry) =>
     entry.sql.startsWith("insert into agent_reports"),
   );

@@ -132,6 +132,7 @@ docker compose exec app npm run migrate:postgres
 - Optional HTTP LLM provider hook
 - Optional OpenAI Responses API provider hook
 - Per-stage OpenAI model routing for decision, router, message, and report calls
+- Context-aware model-routing evidence showing fast tiers for classification/decision/routing/feedback and strong tiers for emotional/conflict responses, reports, and policy repair
 - Optional external report judge for Shape Performance Reports
 - Versioned decision/router/message/report judge prompt templates
 - Synthetic WebSocket load test with message acknowledgement, first-token, feedback acknowledgement, report throughput, and socket-stability metrics

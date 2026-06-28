@@ -65,6 +65,7 @@ create table if not exists agent_decisions (
   model_name text,
   prompt_version text,
   policy_version text,
+  model_routing jsonb not null default '{}',
   route jsonb not null default '{}',
   created_at timestamptz not null
 );
@@ -80,6 +81,7 @@ create table if not exists routing_decisions (
   selected_agent_id text,
   selected_agent_name text,
   reason text not null,
+  model_routing jsonb not null default '{}',
   candidate_scores jsonb not null,
   blocked_agent_ids text[] not null default '{}',
   created_at timestamptz not null
@@ -151,6 +153,7 @@ create table if not exists room_reports (
   summary text not null,
   room_stats jsonb not null,
   session_feedback_summary jsonb not null,
+  model_routing_summary jsonb not null default '{}',
   system_performance jsonb not null,
   comparison jsonb not null,
   created_at timestamptz not null
@@ -173,3 +176,6 @@ alter table session_feedback add column if not exists route_next_agent_id text;
 alter table agent_reports add column if not exists routing_scores jsonb not null default '{}';
 alter table agent_reports add column if not exists decision_review jsonb not null default '{}';
 alter table messages add column if not exists first_token_latency_ms integer;
+alter table agent_decisions add column if not exists model_routing jsonb not null default '{}';
+alter table routing_decisions add column if not exists model_routing jsonb not null default '{}';
+alter table room_reports add column if not exists model_routing_summary jsonb not null default '{}';

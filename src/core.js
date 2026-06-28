@@ -442,13 +442,16 @@ function addHumanMessage(room, displayName, content) {
 
 function createAgentPlaceholder(room, agentId, decisionId) {
   const agent = getAgent(agentId);
+  const decision = room.decisions.find((candidate) => candidate.id === decisionId);
+  const modelRouting = decision && decision.modelRouting;
+  const messageModel = modelRouting && modelRouting.message && modelRouting.message.modelName;
   const message = createMessage(room, {
     senderName: agent.name,
     senderType: "ai",
     agentId,
     content: "",
     decisionId,
-    modelName: agent.modelName,
+    modelName: messageModel || agent.modelName,
     promptVersion: agent.promptVersion,
     policyVersion: effectiveAgentPolicyVersion(agent, room),
   });
@@ -513,6 +516,7 @@ function buildRoutingDecision(room, triggerMessage, rawDecisions) {
   const routeReason = winner
     ? routingReasonForWinner(room, signals, winner)
     : policyResult.noWinnerReason || "No agent crossed the speak threshold.";
+  const modelRouting = buildModelRoutingPlan(room, signals, winner);
   const routingDecision = {
     id: randomUUID(),
     roomId: room.id,
@@ -524,12 +528,19 @@ function buildRoutingDecision(room, triggerMessage, rawDecisions) {
     selectedAgentId: winner ? winner.agentId : null,
     selectedAgentName: winner ? winner.agentName : null,
     reason: routeReason,
+    modelRouting,
     candidateScores: routedInput.map((decision) => ({
       agentId: decision.agentId,
       agentName: decision.agentName,
       decision: decision.decision,
       confidence: decision.confidence,
       groupState: decision.groupState,
+      decisionModelTier:
+        decision.modelRouting && decision.modelRouting.decision
+          ? decision.modelRouting.decision.tier
+          : modelRouting.decision.tier,
+      messageModelTier:
+        decision.agentId === (winner && winner.agentId) ? modelRouting.message.tier : null,
       ruleAdjustments: decision.ruleAdjustments || [],
     })),
     blockedAgentIds: routedInput
@@ -547,16 +558,18 @@ function buildRoutingDecision(room, triggerMessage, rawDecisions) {
       groupState: decision.groupState,
       selectedAgentId: winner ? winner.agentId : null,
       reason: routeReason,
+      modelRouting,
     };
 
     if (!winner || decision.id === winner.id || decision.decision !== "speak") {
-      return { ...decision, route };
+      return { ...decision, modelRouting, route };
     }
 
     return {
       ...decision,
       decision: "wait",
       reason: `Router held back because ${winner.agentName} had the stronger fit for this turn.`,
+      modelRouting,
       route,
     };
   });
@@ -695,6 +708,76 @@ function routingReasonForWinner(room, signals, winner) {
   return `${winner.agentName} had the strongest ${winner.groupState} fit.`;
 }
 
+function buildModelRoutingPlan(room, signals, winner) {
+  const highStakesResponse =
+    Boolean(signals.emotionallySensitive) ||
+    Boolean(signals.tension) ||
+    room.scenario.roomType === "drama_conflict";
+  const nuancedPolicyRepair =
+    highStakesResponse || Boolean(signals.chaotic) || room.policyMode === "improved";
+  const escalationReasons = [];
+
+  if (signals.emotionallySensitive) escalationReasons.push("emotionally sensitive response");
+  if (signals.tension) escalationReasons.push("conflict mediation");
+  if (signals.chaotic) escalationReasons.push("chaotic thread repair");
+  if (room.policyMode === "improved") escalationReasons.push("policy repair loop");
+
+  return {
+    selectedAgentId: winner ? winner.agentId : null,
+    classification: modelRouteStage(
+      "classification",
+      "fast",
+      "local-fast-classifier-v1",
+      "Short conversation-state classification can run on a cheaper, faster model.",
+    ),
+    decision: modelRouteStage(
+      "decision",
+      "fast",
+      "local-fast-decision-v1",
+      "Speak, wait, and stay-silent gates use a cheap low-latency policy model.",
+    ),
+    router: modelRouteStage(
+      "router",
+      "fast",
+      "local-fast-router-v1",
+      "Single-turn routing chooses at most one Shape with low latency.",
+    ),
+    message: modelRouteStage(
+      "message",
+      highStakesResponse ? "strong" : "standard",
+      highStakesResponse ? "local-strong-social-response-v1" : "local-standard-message-v1",
+      highStakesResponse
+        ? "Emotionally complex or conflict-heavy turns require stronger social reasoning."
+        : "Normal group-chat replies can use the standard response policy.",
+    ),
+    feedbackAggregation: modelRouteStage(
+      "feedback_aggregation",
+      "fast",
+      "local-fast-feedback-aggregator-v1",
+      "Feedback aggregation is count-heavy and uses the fast tier.",
+    ),
+    report: modelRouteStage(
+      "report",
+      "strong",
+      "local-strong-report-judge-v1",
+      "Final Shape reports need stronger judgment over transcript, feedback, and routing evidence.",
+    ),
+    policy: modelRouteStage(
+      "policy",
+      "strong",
+      nuancedPolicyRepair ? "local-strong-policy-repair-v1" : "local-strong-policy-generation-v1",
+      nuancedPolicyRepair
+        ? "Policy repair needs stronger reasoning because routing or social context was complex."
+        : "Policy generation uses the strong tier to update participation rules.",
+    ),
+    escalationReasons,
+  };
+}
+
+function modelRouteStage(stage, tier, modelName, reason) {
+  return { stage, tier, modelName, reason };
+}
+
 function buildRoutingFeedbackStats(room) {
   return getRoomAgents(room).reduce((statsByAgent, agent) => {
     const messages = room.messages.filter((message) => message.agentId === agent.id);
@@ -729,6 +812,7 @@ function recordRoutedDecisions(room, routingDecision, routedDecisions) {
 
 function decideForAgent(agent, room, triggerMessage) {
   const signals = extractSignals(room, triggerMessage);
+  const modelRouting = buildModelRoutingPlan(room, signals, null);
   const improved = room.policyMode === "improved";
   const lastAgentMessage = [...room.messages]
     .reverse()
@@ -850,7 +934,8 @@ function decideForAgent(agent, room, triggerMessage) {
     confidence: round(Math.max(0, Math.min(0.99, confidence))),
     groupState: signals.groupState,
     roomType: room.scenario.roomType,
-    modelName: agent.modelName,
+    modelName: modelRouting.decision.modelName,
+    modelRouting,
     promptVersion: agent.promptVersion,
     policyVersion: effectiveAgentPolicyVersion(agent, room),
     createdAt: new Date().toISOString(),
@@ -977,6 +1062,7 @@ function buildReport(room, options = {}) {
     summary: summarizeSession(agentReports, room),
     roomStats: buildRoomStats(room),
     sessionFeedbackSummary: summarizeSessionFeedback(room),
+    modelRoutingSummary: buildModelRoutingSummary(room),
     systemPerformance: buildSystemPerformance(room, options.systemContext),
     agents: agentReports,
     comparison: previousReport ? compareReports(previousReport, agentReports) : [],
@@ -1397,6 +1483,50 @@ function summarizeSessionFeedback(room) {
   };
 }
 
+function buildModelRoutingSummary(room) {
+  const plans = room.routingDecisions
+    .map((decision) => decision.modelRouting)
+    .filter(Boolean);
+  const latestPlan =
+    plans[plans.length - 1] ||
+    buildModelRoutingPlan(
+      room,
+      {
+        emotionallySensitive: false,
+        tension: false,
+        chaotic: false,
+      },
+      null,
+    );
+  const stages = [
+    "classification",
+    "decision",
+    "router",
+    "message",
+    "feedbackAggregation",
+    "report",
+    "policy",
+  ];
+  const tierCounts = plans.reduce((counts, plan) => {
+    stages.forEach((stage) => {
+      const tier = plan[stage] && plan[stage].tier;
+      if (!tier) return;
+      counts[tier] = (counts[tier] || 0) + 1;
+    });
+    return counts;
+  }, {});
+
+  return {
+    routingPlans: plans.length,
+    latestPlan,
+    tierCounts,
+    strongMessageRoutes: plans.filter((plan) => plan.message && plan.message.tier === "strong").length,
+    fastDecisionRoutes: plans.filter((plan) => plan.decision && plan.decision.tier === "fast").length,
+    reportTier: latestPlan.report.tier,
+    policyTier: latestPlan.policy.tier,
+  };
+}
+
 function buildRoomStats(room) {
   const humanMessages = room.messages.filter((message) => message.senderType === "human");
   const aiMessages = room.messages.filter((message) => message.senderType === "ai");
@@ -1750,8 +1880,12 @@ function createExport(room) {
       senderName: message.senderName,
       senderType: message.senderType,
       agentId: message.agentId,
+      decisionId: message.decisionId,
       content: message.content,
       createdAt: message.createdAt,
+      modelName: message.modelName,
+      promptVersion: message.promptVersion,
+      policyVersion: message.policyVersion,
       feedbackTags: message.feedback.map((entry) => entry.tag),
     })),
   };

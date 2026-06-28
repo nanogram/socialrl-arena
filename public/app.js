@@ -791,6 +791,7 @@ function renderReportPage() {
         </div>
       </article>
       ${renderSystemPerformance(report.systemPerformance)}
+      ${renderModelRoutingSummary(report.modelRoutingSummary)}
       ${report.agents.map(renderExpandedAgentReport).join("")}
       ${renderComparison(report)}
     </section>
@@ -1038,6 +1039,7 @@ function renderRoutingDecisions() {
             <br />
             Blocked: ${escapeHtml(blocked)}
           </div>
+          ${renderModelRoutingPlan(route.modelRouting)}
           ${renderCandidateScores(route.candidateScores)}
         </article>
       `;
@@ -1056,7 +1058,7 @@ function renderCandidateScores(candidateScores) {
             <div class="candidate-row">
               <span>${escapeHtml(candidate.agentName || candidate.agentId)}</span>
               <strong>${Math.round((candidate.confidence || 0) * 100)}%</strong>
-              <small>${escapeHtml(formatDecision(candidate.decision || "wait"))}</small>
+              <small>${escapeHtml(formatDecision(candidate.decision || "wait"))}${candidate.decisionModelTier ? ` · ${escapeHtml(candidate.decisionModelTier)}` : ""}</small>
               ${renderRuleAdjustments(candidate.ruleAdjustments)}
             </div>
           `,
@@ -1209,6 +1211,7 @@ function renderReport() {
       <p>${escapeHtml(report.summary)}</p>
       ${renderSessionFeedback(report.sessionFeedbackSummary)}
     </article>
+    ${renderModelRoutingSummary(report.modelRoutingSummary)}
     ${report.agents.map(renderAgentReport).join("")}
     ${renderComparison(report)}
   `;
@@ -1302,6 +1305,49 @@ function renderRoutingFeedbackVotes(feedback = {}) {
       ${metric("Annoying votes", feedback.mostAnnoyingVotes || 0)}
     </div>
   `;
+}
+
+function renderModelRoutingSummary(summary = {}) {
+  const latest = summary.latestPlan || {};
+  if (!latest.decision && !latest.router && !latest.message && !latest.report) return "";
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Model Routing</strong></div>
+      <p>Fast tiers handle classification, speak decisions, routing, and feedback aggregation. Strong tiers handle reports, policy generation, and emotionally complex or conflict-heavy responses.</p>
+      <div class="metric-grid">
+        ${metric("Plans", summary.routingPlans || 0)}
+        ${metric("Fast decisions", summary.fastDecisionRoutes || 0)}
+        ${metric("Strong responses", summary.strongMessageRoutes || 0)}
+        ${metric("Report tier", summary.reportTier || (latest.report && latest.report.tier) || "strong")}
+      </div>
+      ${renderModelRoutingPlan(latest)}
+    </article>
+  `;
+}
+
+function renderModelRoutingPlan(plan = {}) {
+  const stages = [
+    ["classification", "Classification"],
+    ["decision", "Decision"],
+    ["router", "Router"],
+    ["message", "Message"],
+    ["feedbackAggregation", "Feedback"],
+    ["report", "Report"],
+    ["policy", "Policy"],
+  ];
+  const chips = stages
+    .map(([key, label]) => {
+      const stage = plan[key];
+      if (!stage) return "";
+      return `<span class="tag">${escapeHtml(label)} · ${escapeHtml(stage.tier)} · ${escapeHtml(stage.modelName)}</span>`;
+    })
+    .join("");
+  const reasons =
+    Array.isArray(plan.escalationReasons) && plan.escalationReasons.length
+      ? `<p><strong>Escalation:</strong> ${escapeHtml(plan.escalationReasons.join(", "))}</p>`
+      : "";
+  if (!chips && !reasons) return "";
+  return `<div class="model-routing-plan"><div class="tag-list">${chips}</div>${reasons}</div>`;
 }
 
 function renderDecisionReview(review) {

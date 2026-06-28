@@ -331,9 +331,9 @@ async function insertAgentDecisions(client, decisions) {
         insert into agent_decisions (
           id, room_id, trigger_message_id, agent_id, agent_name, decision, target_user,
           reason, confidence, group_state, room_type, model_name, prompt_version,
-          policy_version, route, created_at
+          policy_version, model_routing, route, created_at
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16::jsonb, $17)
       `,
       [
         decision.id,
@@ -350,6 +350,7 @@ async function insertAgentDecisions(client, decisions) {
         decision.modelName,
         decision.promptVersion,
         decision.policyVersion,
+        JSON.stringify(decision.modelRouting || {}),
         JSON.stringify(decision.route || {}),
         decision.createdAt,
       ],
@@ -364,9 +365,9 @@ async function insertRoutingDecisions(client, routingDecisions) {
         insert into routing_decisions (
           id, room_id, trigger_message_id, router_version, router_model_name,
           room_type, group_state, selected_agent_id, selected_agent_name, reason,
-          candidate_scores, blocked_agent_ids, created_at
+          model_routing, candidate_scores, blocked_agent_ids, created_at
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13, $14)
       `,
       [
         decision.id,
@@ -379,6 +380,7 @@ async function insertRoutingDecisions(client, routingDecisions) {
         decision.selectedAgentId || null,
         decision.selectedAgentName || null,
         decision.reason,
+        JSON.stringify(decision.modelRouting || {}),
         JSON.stringify(decision.candidateScores || []),
         decision.blockedAgentIds || [],
         decision.createdAt,
@@ -471,9 +473,9 @@ async function insertReports(client, reports) {
       `
         insert into room_reports (
           id, room_id, session_number, policy_mode, summary, room_stats,
-          session_feedback_summary, system_performance, comparison, created_at
+          session_feedback_summary, model_routing_summary, system_performance, comparison, created_at
         )
-        values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10)
+        values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11)
       `,
       [
         report.id,
@@ -483,6 +485,7 @@ async function insertReports(client, reports) {
         report.summary,
         JSON.stringify(report.roomStats),
         JSON.stringify(report.sessionFeedbackSummary),
+        JSON.stringify(report.modelRoutingSummary || {}),
         JSON.stringify(report.systemPerformance),
         JSON.stringify(report.comparison || []),
         report.createdAt,

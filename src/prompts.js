@@ -176,6 +176,7 @@ function compactPromptReport(report) {
     summary: report.summary,
     roomStats: report.roomStats,
     sessionFeedbackSummary: report.sessionFeedbackSummary,
+    modelRoutingSummary: report.modelRoutingSummary,
     agents: report.agents.map((agentReport) => ({
       agentId: agentReport.agentId,
       agentName: agentReport.agentName,

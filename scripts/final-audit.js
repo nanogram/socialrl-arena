@@ -140,6 +140,8 @@ function demoReportCheck(exported) {
   const room = exported.room || {};
   const latestReport = latest(room.reports) || {};
   const performance = latestReport.systemPerformance || {};
+  const modelRouting = latestReport.modelRoutingSummary || {};
+  const latestPlan = modelRouting.latestPlan || {};
   const agentReports = Array.isArray(latestReport.agents) ? latestReport.agents : [];
   const ok =
     room.agentSelectionRules &&
@@ -148,6 +150,14 @@ function demoReportCheck(exported) {
     performance.roomsTracked !== undefined &&
     performance.p99FirstTokenLatencyMs !== undefined &&
     performance.p99FullResponseLatencyMs !== undefined &&
+    latestPlan.decision &&
+    latestPlan.decision.tier === "fast" &&
+    latestPlan.router &&
+    latestPlan.router.tier === "fast" &&
+    latestPlan.report &&
+    latestPlan.report.tier === "strong" &&
+    Array.isArray(room.routingDecisions) &&
+    room.routingDecisions.every((decision) => decision.modelRouting && decision.modelRouting.decision) &&
     agentReports.every(
       (agent) =>
         agent.decisionReview &&
@@ -163,23 +173,27 @@ function demoReportCheck(exported) {
     name: "demo:report-contract",
     status: ok ? "pass" : "fail",
     detail: ok
-      ? `${agentReports.length} agent reports include routing, performance, and decision-review evidence`
-      : "latest report missing agent selection rules, decision review, routing feedback, routing scores, or system performance fields",
+      ? `${agentReports.length} agent reports include routing, performance, model-routing, and decision-review evidence`
+      : "latest report missing agent selection rules, model routing, decision review, routing feedback, routing scores, or system performance fields",
   };
 }
 
 function demoExportCheck(exported) {
+  const transcript = Array.isArray(exported.transcript) ? exported.transcript : [];
+  const aiTranscript = transcript.filter((message) => message.senderType === "ai");
   const ok =
     exported.exportedAt &&
     exported.room &&
-    Array.isArray(exported.transcript) &&
-    exported.transcript.length > 0 &&
-    exported.transcript.every((message) => "feedbackTags" in message);
+    transcript.length > 0 &&
+    transcript.every((message) => "feedbackTags" in message) &&
+    aiTranscript.every(
+      (message) => message.decisionId && message.modelName && message.promptVersion && message.policyVersion,
+    );
 
   return {
     name: "demo:export-contract",
     status: ok ? "pass" : "fail",
-    detail: ok ? `${exported.transcript.length} transcript messages exported` : "export JSON missing transcript evidence",
+    detail: ok ? `${transcript.length} transcript messages exported` : "export JSON missing transcript/model evidence",
   };
 }
 

@@ -85,9 +85,16 @@ assert.ok(
   "agent decisions should include route metadata",
 );
 assert.ok(room.routingDecisions.length >= 1, "router decisions should be recorded separately");
+assert.equal(room.routingDecisions[0].modelRouting.decision.tier, "fast");
+assert.equal(room.routingDecisions[0].modelRouting.router.tier, "fast");
+assert.equal(room.routingDecisions[0].modelRouting.report.tier, "strong");
 assert.ok(
   room.decisions.every((decision) => decision.route && decision.route.routingDecisionId),
   "each decision should point back to a routing decision",
+);
+assert.ok(
+  room.decisions.every((decision) => decision.modelRouting && decision.modelRouting.decision.tier === "fast"),
+  "each decision should include model-routing tier evidence",
 );
 assert.ok(
   room.decisions.every((decision) => decision.route && decision.route.routerModelName === "local-rule-router"),
@@ -120,6 +127,8 @@ assert.equal(report.policyMode, "baseline");
 assert.ok(report.summary.includes("baseline policy"));
 assert.equal(report.sessionFeedbackSummary.totalResponses, 1);
 assert.equal(report.sessionFeedbackSummary.routeNextAgentCounts.observer_v1, 1);
+assert.equal(report.modelRoutingSummary.latestPlan.decision.tier, "fast");
+assert.equal(report.modelRoutingSummary.latestPlan.report.tier, "strong");
 assert.equal(observerReport.routingRecommendation.sessionFeedback.routeNextVotes, 1);
 assert.ok(observerReport.routingRecommendation.routeNextTime);
 assert.ok(observerReport.routingRecommendation.reason.includes("session feedback"));
@@ -256,6 +265,12 @@ assert.equal(observerTurn.aiMessage.agentId, "observer_v1");
 const exported = createExport(room);
 assert.equal(exported.room.id, "test-room");
 assert.ok(Array.isArray(exported.transcript));
+assert.ok(
+  exported.transcript
+    .filter((message) => message.senderType === "ai")
+    .every((message) => message.modelName && message.promptVersion && message.policyVersion && message.decisionId),
+  "export transcript should preserve AI model, prompt, policy, and decision metadata",
+);
 assert.ok(Array.isArray(exported.room.routingDecisions));
 
 const promptRoom = createRoom("prompt-room");
@@ -344,6 +359,8 @@ const emotionalDecisions = routeAgentDecisions(emotionalRouteRoom, emotionalTrig
 const emotionalRoute = emotionalRouteRoom.routingDecisions.at(-1);
 assert.equal(emotionalRoute.groupState, "emotionally_sensitive");
 assert.equal(emotionalRoute.selectedAgentId, "observer_v1");
+assert.equal(emotionalRoute.modelRouting.message.tier, "strong");
+assert.ok(emotionalRoute.modelRouting.escalationReasons.includes("emotionally sensitive response"));
 assert.ok(emotionalRoute.blockedAgentIds.includes("vibe_friend_v1"));
 assert.equal(
   emotionalDecisions.find((decision) => decision.agentId === "vibe_friend_v1").decision,
