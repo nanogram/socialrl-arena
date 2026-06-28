@@ -30,6 +30,7 @@ npm run load-test:target-artifact
 npm run demo:seed
 npm run preflight
 npm run final-audit
+npm run final-handoff
 ```
 
 For a clean local target load run, start the server with in-memory storage in one terminal:

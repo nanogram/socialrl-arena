@@ -15,7 +15,8 @@
     "load-test:target-artifact": "node scripts/run-target-load.js",
     "demo:seed": "node scripts/demo-seed.js",
     "preflight": "node scripts/preflight.js",
-    "final-audit": "node scripts/final-audit.js"
+    "final-audit": "node scripts/final-audit.js",
+    "final-handoff": "node scripts/final-handoff.js"
   },
   "dependencies": {
     "pg": "^8.22.0",

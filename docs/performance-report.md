@@ -39,39 +39,39 @@ Date: 2026-06-28
 
 ```json
 {
-  "generatedAt": "2026-06-28T10:04:32.980Z",
+  "generatedAt": "2026-06-28T10:21:15.678Z",
   "targetUrl": "ws://localhost:3100",
   "scenarioId": "weekend_trip",
   "roomCount": 100,
   "usersPerRoom": 3,
   "messagesPerRoom": 10,
   "aiAgentsSimulated": 300,
-  "elapsedMs": 7521,
+  "elapsedMs": 7431,
   "messagesSent": 1000,
   "reportsReady": 100,
   "socketsOpened": 300,
   "socketCloses": 300,
   "unexpectedSocketCloses": 0,
-  "snapshots": 11593,
+  "snapshots": 11572,
   "errors": 0,
-  "messageThroughputPerSecond": 132.96,
-  "reportThroughputPerSecond": 13.3,
+  "messageThroughputPerSecond": 134.57,
+  "reportThroughputPerSecond": 13.46,
   "firstTokenSamples": 984,
   "feedbackSamples": 100,
-  "p50MessageAckMs": 142,
-  "p95MessageAckMs": 273,
-  "p50FirstTokenLatencyMs": 406,
-  "p95FirstTokenLatencyMs": 489,
-  "p50FeedbackAckMs": 6,
-  "p95FeedbackAckMs": 81,
-  "p50ReportLatencyMs": 2610,
-  "p95ReportLatencyMs": 3507,
+  "p50MessageAckMs": 109,
+  "p95MessageAckMs": 248,
+  "p50FirstTokenLatencyMs": 384,
+  "p95FirstTokenLatencyMs": 502,
+  "p50FeedbackAckMs": 174,
+  "p95FeedbackAckMs": 251,
+  "p50ReportLatencyMs": 1734,
+  "p95ReportLatencyMs": 2554,
   "passed": true
 }
 ```
 
 ## Interpretation
 
-The demo target profile completed with zero WebSocket or report errors. It simulated 300 AI agents across 100 rooms, and all 300 WebSocket clients closed cleanly after the run. Every room generated a report, report throughput was 13.3 reports per second, p95 first-token latency was 489 ms, p95 feedback acknowledgement latency was 81 ms, and p95 report latency was 3.507 seconds in local memory-backed mode.
+The demo target profile completed with zero WebSocket or report errors. It simulated 300 AI agents across 100 rooms, and all 300 WebSocket clients closed cleanly after the run. Every room generated a report, report throughput was 13.46 reports per second, p95 first-token latency was 502 ms, p95 feedback acknowledgement latency was 251 ms, and p95 report latency was 2.554 seconds in local memory-backed mode.
 
 This is not a production benchmark. It is a demo-level verification that the realtime loop, routing loop, feedback/report loop, and WebSocket fanout can handle the target scenario locally. The load-test script now exits non-zero if report generation, first-token sampling, feedback acknowledgement sampling, or clean socket closure evidence is missing, and the target-artifact command writes the latest result to `demo-artifacts/target-load-latest.json` for final audit.

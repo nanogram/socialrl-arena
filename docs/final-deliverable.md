@@ -33,9 +33,12 @@ Run final local verification:
 npm run preflight
 npm run load-test:smoke
 npm run load-test:target-artifact
+npm run final-handoff
 ```
 
 The target-load command writes `demo-artifacts/target-load-latest.json`, which `npm run final-audit` validates against the spec's 100-room / 300-user / 300-agent / 1,000-message profile.
+
+The handoff command writes `demo-artifacts/final-handoff.md`, a local summary of the latest seeded demo, target-load evidence, audit status, and remaining external links.
 
 After GitHub, deployment, and Loom are ready, audit the final handoff links:
 
