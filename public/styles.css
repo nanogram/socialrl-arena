@@ -25,6 +25,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
@@ -32,6 +37,7 @@ body {
     linear-gradient(180deg, #fbfcfb 0, var(--bg) 360px),
     var(--bg);
   color: var(--text);
+  overflow: hidden;
 }
 
 button,
@@ -103,8 +109,9 @@ button.compact-button {
 
 .app-shell {
   display: grid;
-  grid-template-rows: auto 1fr;
-  min-height: 100vh;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  min-height: 0;
 }
 
 .topbar {
@@ -163,7 +170,9 @@ button.compact-button {
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 430px;
+  height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 body[data-view="chat"][data-debug-panel="hidden"] .workspace {
@@ -200,8 +209,9 @@ body[data-view="landing"] .messages {
 
 .chat-panel {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 0;
+  overflow: hidden;
   border-right: 1px solid var(--line);
 }
 
@@ -354,7 +364,9 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 24px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(248, 251, 250, 0)),
@@ -816,6 +828,7 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 .composer {
   display: grid;
   grid-template-columns: minmax(96px, 112px) minmax(0, 1fr) auto;
+  align-items: center;
   gap: 8px;
   padding: 10px 12px;
   border-top: 1px solid var(--line);
@@ -825,7 +838,10 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 
 .composer input,
 .composer select {
+  align-self: center;
+  height: 36px;
   min-height: 36px;
+  max-height: 36px;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 0 10px;
@@ -834,7 +850,10 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 }
 
 .composer button {
+  align-self: center;
+  height: 36px;
   min-height: 36px;
+  max-height: 36px;
   padding: 0 12px;
 }
 
@@ -842,8 +861,10 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   display: grid;
   grid-auto-rows: auto;
   align-content: start;
+  height: 100%;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: #f9fbfa;
   box-shadow: inset 1px 0 0 rgba(31, 37, 35, 0.02);
 }
@@ -1363,18 +1384,32 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 }
 
 @media (max-width: 980px) {
+  body {
+    overflow: auto;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
   }
 
   .chat-panel {
     min-height: 62vh;
+    max-height: none;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
 
   .side-panel {
     grid-auto-rows: auto;
+    height: auto;
+    max-height: none;
   }
 
   .landing-product {
