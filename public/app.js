@@ -901,6 +901,7 @@ function renderDecisions() {
     .map((decision) => {
       const route = decision.route ? decision.route.reason : "No route metadata";
       const routerModel = decision.route && decision.route.routerModelName ? decision.route.routerModelName : "router";
+      const target = decision.targetUser ? ` → ${decision.targetUser}` : "";
       return `
         <article class="decision">
           <div class="decision-top">
@@ -908,7 +909,7 @@ function renderDecisions() {
             <span class="badge ${decision.decision}">${formatDecision(decision.decision)}</span>
           </div>
           <div class="decision-meta">
-            ${Math.round(decision.confidence * 100)}% confidence · ${escapeHtml(decision.groupState)} · ${escapeHtml(decision.roomType)}
+            ${Math.round(decision.confidence * 100)}% confidence${escapeHtml(target)} · ${escapeHtml(decision.groupState)} · ${escapeHtml(decision.roomType)}
             <br />
             ${escapeHtml(decision.modelName || "model")} · ${escapeHtml(decision.promptVersion || "prompt")} · ${escapeHtml(decision.policyVersion || "policy")}
             <br />

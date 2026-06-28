@@ -2,7 +2,7 @@
 
 SocialRL Arena is a realtime eval harness for multiplayer AI. It tests not only what an agent says, but whether it should speak, who it should respond to, and whether its participation improves the group dynamic.
 
-The demo centers on live human + AI rooms. Humans chat normally while AI agents run a two-step participation process: first each agent decides whether to speak, wait, or stay silent; then the router selects at most one agent/model/policy for the turn. This creates measurable restraint instead of a bot that replies to every message.
+The demo centers on live human + AI rooms. Humans chat normally while AI agents run a two-step participation process: first each agent decides whether to speak, wait, or stay silent and who it is targeting; then the router selects at most one agent/model/policy for the turn. This creates measurable restraint instead of a bot that replies to every message.
 
 The product loop is:
 

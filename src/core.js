@@ -780,7 +780,7 @@ function decideForAgent(agent, room, triggerMessage) {
     agentId: agent.id,
     agentName: agent.name,
     decision,
-    targetUser: inferTargetUser(triggerMessage),
+    targetUser: targetUserForDecision(agent, signals, triggerMessage),
     reason: reasons[0] || "no high-leverage opening detected",
     confidence: round(Math.max(0, Math.min(0.99, confidence))),
     groupState: signals.groupState,
@@ -831,7 +831,9 @@ function generateAgentReply(room, decision) {
       return "One thing to separate: the plan choice and whether people feel heard. Solve the heard part first.";
     }
     if (signals.quietParticipantRisk) {
-      return "Before locking it in, I would check with whoever has spoken least.";
+      return decision.targetUser
+        ? `Before locking it in, I would check what ${decision.targetUser} thinks.`
+        : "Before locking it in, I would check with whoever has spoken least.";
     }
     return "The unresolved constraint seems to be what matters most, not how many options are on the table.";
   }
@@ -1349,7 +1351,8 @@ function extractSignals(room, triggerMessage) {
   const derailed = /(pizza|meme|random|whatever|side quest|off topic)/.test(combined);
   const confusion = /(not sure|confused|unclear|what.*priority|what matters)/.test(combined);
   const lowEnergy = recentHuman.length >= 2 && !decisionNeeded && !playful && !tension;
-  const quietParticipantRisk = detectQuietParticipantRisk(room);
+  const quietParticipantName = detectQuietParticipant(room);
+  const quietParticipantRisk = Boolean(quietParticipantName);
 
   let groupState = "active";
   if (tension) groupState = "tense";
@@ -1368,18 +1371,38 @@ function extractSignals(room, triggerMessage) {
     confusion,
     lowEnergy,
     quietParticipantRisk,
+    quietParticipantName,
     humanCount: recentHuman.length,
     groupState,
   };
 }
 
 function detectQuietParticipantRisk(room) {
+  return Boolean(detectQuietParticipant(room));
+}
+
+function detectQuietParticipant(room) {
   const humanMessages = room.messages.filter((message) => message.senderType === "human");
+  const participantNames = [...room.participants.values()]
+    .filter((participant) => participant.participantType === "human")
+    .map((participant) => participant.displayName);
+  const names = [...new Set([...participantNames, ...humanMessages.map((message) => message.senderName)])];
+  if (names.length < 3) return null;
+
   const speakers = countBy(humanMessages, "senderName");
-  const names = Object.keys(speakers);
-  if (names.length < 3) return false;
-  const counts = Object.values(speakers);
-  return Math.max(...counts) >= 3 && Math.min(...counts) <= 1;
+  const entries = names.map((name) => [name, speakers[name] || 0]);
+  const counts = entries.map(([, count]) => count);
+  if (Math.max(...counts) < 3 || Math.min(...counts) > 1) return null;
+
+  entries.sort((left, right) => left[1] - right[1] || left[0].localeCompare(right[0]));
+  return entries[0][0];
+}
+
+function targetUserForDecision(agent, signals, triggerMessage) {
+  if (agent.id === "observer_v1" && signals.quietParticipantName) {
+    return signals.quietParticipantName;
+  }
+  return inferTargetUser(triggerMessage);
 }
 
 function wasLikelyInterruption(room, aiMessage) {

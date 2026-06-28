@@ -2,6 +2,7 @@ const assert = require("assert");
 const {
   addFeedback,
   addHumanMessage,
+  addParticipant,
   addSessionFeedback,
   agentSelectionRules,
   buildReport,
@@ -326,5 +327,21 @@ assert.ok(
     .find((candidate) => candidate.agentId === "mediator_v1")
     .ruleAdjustments.includes("raised restraint after timing feedback"),
 );
+
+const quietParticipantRoom = createRoom("quiet-participant", {
+  agentIds: ["observer_v1", "mediator_v1"],
+});
+addParticipant(quietParticipantRoom, "Alex", "human-alex");
+addParticipant(quietParticipantRoom, "Jules", "human-jules");
+addParticipant(quietParticipantRoom, "Sam", "human-sam");
+addHumanMessage(quietParticipantRoom, "Alex", "I want to keep this cheap.");
+addHumanMessage(quietParticipantRoom, "Alex", "Budget is still my main thing.");
+addHumanMessage(quietParticipantRoom, "Alex", "I can only do one night.");
+addHumanMessage(quietParticipantRoom, "Jules", "I want somewhere fun but can compromise.");
+const quietTrigger = addHumanMessage(quietParticipantRoom, "Jules", "Should we lock in the city option?");
+const quietDecisions = createAgentDecisions(quietParticipantRoom, quietTrigger);
+const quietObserver = quietDecisions.find((decision) => decision.agentId === "observer_v1");
+assert.equal(quietObserver.targetUser, "Sam");
+assert.ok(quietObserver.reason.includes("quieter participant"));
 
 console.log("core loop tests passed");
