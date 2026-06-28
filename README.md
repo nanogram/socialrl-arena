@@ -112,6 +112,7 @@ docker compose exec app npm run migrate:postgres
 - Streaming AI message simulation
 - WebSocket payloads include spec-style snake_case aliases alongside internal camelCase fields
 - WebSocket client events accept spec-style snake_case and camelCase field names, including event-level `room_id`
+- Human and AI messages preserve sender identity for transcript export and normalized Postgres writes
 - Full message feedback taxonomy for timing, social awareness, usefulness, personality, and message quality
 - Session-level feedback, including route-next agent preference
 - Normal-mode end-of-session feedback prompt for useful/annoying/route-next/reached-decision/invite-again signals

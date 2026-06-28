@@ -510,6 +510,7 @@ function normalizeRoomId(id) {
 
 function addHumanMessage(room, displayName, content, options = {}) {
   const message = createMessage(room, {
+    senderId: options.senderId || null,
     senderName: normalizeDisplayName(displayName),
     senderType: "human",
     content,
@@ -525,6 +526,7 @@ function createAgentPlaceholder(room, agentId, decisionId) {
   const modelRouting = decision && decision.modelRouting;
   const messageModel = modelRouting && modelRouting.message && modelRouting.message.modelName;
   const message = createMessage(room, {
+    senderId: aiParticipantId(room, agentId),
     senderName: agent.name,
     senderType: "ai",
     agentId,
@@ -552,6 +554,7 @@ function createMessage(room, input) {
   return {
     id: randomUUID(),
     roomId: room.id,
+    senderId: input.senderId || null,
     senderName: input.senderName,
     senderType: input.senderType,
     agentId: input.agentId || null,
@@ -2046,6 +2049,7 @@ function createExport(room) {
     room: serialized,
     transcript: serialized.messages.map((message) => ({
       id: message.id,
+      senderId: message.senderId,
       senderName: message.senderName,
       senderType: message.senderType,
       agentId: message.agentId,
@@ -2063,6 +2067,10 @@ function createExport(room) {
 
 function inferTargetUser(triggerMessage) {
   return triggerMessage.senderType === "human" ? triggerMessage.senderName : null;
+}
+
+function aiParticipantId(room, agentId) {
+  return `${room.id}:agent:${agentId}`;
 }
 
 function getAgent(agentId) {
@@ -2226,6 +2234,7 @@ module.exports = {
   addHumanMessage,
   addParticipant,
   addSessionFeedback,
+  aiParticipantId,
   buildRoutingDecision,
   buildReport,
   createAgentDecisions,

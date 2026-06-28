@@ -325,8 +325,8 @@ assert.ok(Array.isArray(exported.transcript));
 assert.ok(
   exported.transcript
     .filter((message) => message.senderType === "ai")
-    .every((message) => message.modelName && message.promptVersion && message.policyVersion && message.decisionId),
-  "export transcript should preserve AI model, prompt, policy, and decision metadata",
+    .every((message) => message.senderId && message.modelName && message.promptVersion && message.policyVersion && message.decisionId),
+  "export transcript should preserve AI sender, model, prompt, policy, and decision metadata",
 );
 assert.ok(
   exported.transcript.every((message) => "replyToMessageId" in message),

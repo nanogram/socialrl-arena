@@ -205,11 +205,17 @@ function demoExportCheck(exported) {
     exported.exportedAt &&
     exported.room &&
     transcript.length > 0 &&
+    transcript.every((message) => "senderId" in message) &&
     transcript.every((message) => "feedbackTags" in message) &&
     transcript.every((message) => "replyToMessageId" in message) &&
     transcript.some((message) => message.replyToMessageId) &&
     aiTranscript.every(
-      (message) => message.decisionId && message.modelName && message.promptVersion && message.policyVersion,
+      (message) =>
+        message.senderId &&
+        message.decisionId &&
+        message.modelName &&
+        message.promptVersion &&
+        message.policyVersion,
     );
 
   return {
@@ -217,7 +223,7 @@ function demoExportCheck(exported) {
     status: ok ? "pass" : "fail",
     detail: ok
       ? `${transcript.length} transcript messages exported`
-      : "export JSON missing transcript/reply/model evidence",
+      : "export JSON missing transcript/sender/reply/model evidence",
   };
 }
 

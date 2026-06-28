@@ -187,12 +187,13 @@ async function handleClientEvent(ws, event) {
 
   if (event.type === "send_message") {
     const displayName = eventValue(event, "display_name", "displayName") || ws.displayName || "Human";
-    ensureParticipant(ws, room, displayName);
+    const participant = ensureParticipant(ws, room, displayName);
     const content = String(event.content || "").trim();
     if (!content) return;
 
     room.status = "active";
     const message = addHumanMessage(room, displayName, content, {
+      senderId: participant.id,
       replyToMessageId: eventValue(event, "reply_to_message_id", "replyToMessageId"),
     });
     broadcastRoom(room.id, "message_created", messageEventPayload(message));
@@ -314,9 +315,10 @@ function leaveCurrentRoom(ws) {
 }
 
 function ensureParticipant(ws, room, displayName) {
-  if (room.participants.has(ws.id)) return;
+  if (room.participants.has(ws.id)) return room.participants.get(ws.id);
   const participant = addParticipant(room, displayName || ws.displayName || "Human", ws.id);
   ws.displayName = participant.displayName;
+  return participant;
 }
 
 function eventValue(event, snakeKey, camelKey) {
@@ -418,7 +420,9 @@ async function runSampleSession(room) {
 
   let previousHumanMessageId = null;
   for (const [speaker, content] of room.scenario.sampleScript) {
+    const participant = ensureSampleParticipant(room, speaker);
     const message = addHumanMessage(room, speaker, content, {
+      senderId: participant.id,
       replyToMessageId: previousHumanMessageId,
     });
     previousHumanMessageId = message.id;
@@ -435,6 +439,16 @@ async function runSampleSession(room) {
   broadcastRoom(room.id, "report_ready", reportReadyEventPayload(room, report));
   await persistRoom(room);
   broadcastRoom(room.id, "state_snapshot", snapshot(room.id));
+}
+
+function ensureSampleParticipant(room, displayName) {
+  const normalizedDisplayName = String(displayName || "Human").trim() || "Human";
+  const existing = [...room.participants.values()].find(
+    (participant) =>
+      participant.participantType === "human" && participant.displayName === normalizedDisplayName,
+  );
+  if (existing) return existing;
+  return addParticipant(room, normalizedDisplayName, `${room.id}:sample:${normalizeRoomId(normalizedDisplayName)}`);
 }
 
 function applySampleFeedback(room) {
@@ -630,6 +644,7 @@ function addMessageAliases(message) {
   return {
     ...message,
     room_id: message.roomId,
+    sender_id: message.senderId,
     sender_name: message.senderName,
     sender_type: message.senderType,
     agent_id: message.agentId,

@@ -1,6 +1,6 @@
 const fs = require("fs/promises");
 const path = require("path");
-const { agents, hydrateRoom, serializeRoom } = require("./core");
+const { agents, aiParticipantId, hydrateRoom, serializeRoom } = require("./core");
 
 function createStorage() {
   if (process.env.SOCIALRL_STORAGE === "memory") {
@@ -280,7 +280,7 @@ function participantRowsForRoom(room, humanParticipants) {
   const aiParticipants = room.selectedAgentIds.map((agentId) => {
     const agent = agents.find((candidate) => candidate.id === agentId);
     return {
-      id: `${room.id}:agent:${agentId}`,
+      id: aiParticipantId(room, agentId),
       displayName: agent ? agent.name : agentId,
       participantType: "ai",
       agentId,
@@ -305,7 +305,7 @@ async function insertMessages(client, messages) {
       [
         message.id,
         message.roomId,
-        null,
+        message.senderId || null,
         message.senderName,
         message.senderType,
         message.agentId,

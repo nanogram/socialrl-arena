@@ -4,6 +4,7 @@ const os = require("os");
 const path = require("path");
 const {
   addHumanMessage,
+  addParticipant,
   addSessionFeedback,
   buildReport,
   createAgentDecisions,
@@ -23,7 +24,10 @@ async function main() {
     agentIds: ["mediator_v1", "observer_v1"],
   });
 
-  const triggerMessage = addHumanMessage(room, "Mina", "We need to decide what ships tomorrow.");
+  const humanParticipant = addParticipant(room, "Mina", "human-mina");
+  const triggerMessage = addHumanMessage(room, "Mina", "We need to decide what ships tomorrow.", {
+    senderId: humanParticipant.id,
+  });
   const decisions = routeAgentDecisions(room, triggerMessage, createAgentDecisions(room, triggerMessage));
   const speaker = decisions.find((decision) => decision.decision === "speak") || decisions[0];
   const aiMessage = createAgentPlaceholder(room, speaker.agentId, speaker.id);
@@ -64,7 +68,12 @@ async function main() {
   assert.equal(restored.scenario.id, "group_project");
   assert.deepEqual(restored.selectedAgentIds, ["mediator_v1", "observer_v1"]);
   assert.equal(restored.messages.length, 2);
+  assert.equal(restored.messages.find((message) => message.senderType === "human").senderId, "human-mina");
   assert.equal(restored.messages.find((message) => message.senderType === "ai").firstTokenLatencyMs, 42);
+  assert.equal(
+    restored.messages.find((message) => message.senderType === "ai").senderId,
+    `persisted-room:agent:${speaker.agentId}`,
+  );
   assert.equal(restored.routingDecisions.length, 1);
   assert.equal(restored.reportJobs[0].id, "job-1");
   assert.equal(restored.sessionFeedback[0].routeNextAgentId, "observer_v1");
@@ -100,9 +109,15 @@ async function main() {
   );
   assert.ok(aiMessageWrite);
   assert.ok(aiMessageWrite.sql.includes("first_token_latency_ms"));
+  assert.equal(aiMessageWrite.params[2], `persisted-room:agent:${speaker.agentId}`);
   assert.equal(aiMessageWrite.params[8], triggerMessage.id);
   assert.equal(aiMessageWrite.params[10], 250);
   assert.equal(aiMessageWrite.params[11], 42);
+  const humanMessageWrite = fakeClient.queries.find(
+    (entry) => entry.sql.startsWith("insert into messages") && entry.params[4] === "human",
+  );
+  assert.ok(humanMessageWrite);
+  assert.equal(humanMessageWrite.params[2], "human-mina");
   const routingDecisionWrite = fakeClient.queries.find((entry) =>
     entry.sql.startsWith("insert into routing_decisions"),
   );
@@ -152,13 +167,13 @@ async function main() {
   const participantWrites = fakeClient.queries.filter((entry) =>
     entry.sql.startsWith("insert into participants"),
   );
-  assert.equal(participantWrites.length, 2);
+  assert.equal(participantWrites.length, 3);
   assert.deepEqual(
     participantWrites.map((entry) => entry.params[3]),
-    ["ai", "ai"],
+    ["human", "ai", "ai"],
   );
   assert.deepEqual(
-    participantWrites.map((entry) => entry.params[4]).sort(),
+    participantWrites.map((entry) => entry.params[4]).filter(Boolean).sort(),
     ["mediator_v1", "observer_v1"],
   );
 
