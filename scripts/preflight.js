@@ -26,7 +26,9 @@ function checkFiles() {
     "docs/demo-script.md",
     "docs/deployment.md",
     "docs/evaluating-ai-as-group-chat-participant.md",
+    "docs/final-deliverable.md",
     "docs/performance-report.md",
+    "docs/public-deployment-checklist.md",
     "src/core.js",
     "src/server.js",
     "src/storage.js",
@@ -119,6 +121,7 @@ function checkPerformanceReport() {
   const report = fs.readFileSync("docs/performance-report.md", "utf8");
   for (const needle of [
     "100 rooms",
+    '"aiAgentsSimulated": 300',
     "1,000 messages",
     '"errors": 0',
     '"reportsReady": 100',

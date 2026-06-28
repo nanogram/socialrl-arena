@@ -132,6 +132,7 @@ docker compose exec app npm run migrate:postgres
 - One-page writeup: `docs/evaluating-ai-as-group-chat-participant.md`
 - Performance report: `docs/performance-report.md`
 - Final deliverable checklist: `docs/final-deliverable.md`
+- Public deployment checklist: `docs/public-deployment-checklist.md`
 - GitHub Actions CI workflow for preflight and smoke load verification
 
 ## Routes

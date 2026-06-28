@@ -6,6 +6,7 @@
 - GitHub repo: push this project repository.
 - 90-second Loom: record the flow from `docs/demo-script.md`.
 - One-page writeup: `docs/evaluating-ai-as-group-chat-participant.md`.
+- Deployment checklist: `docs/public-deployment-checklist.md`.
 
 ## Local Package Generation
 

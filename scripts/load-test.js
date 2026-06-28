@@ -5,6 +5,7 @@ const roomCount = Number(process.env.LOAD_TEST_ROOMS || 20);
 const usersPerRoom = Number(process.env.LOAD_TEST_USERS_PER_ROOM || 3);
 const messagesPerRoom = Number(process.env.LOAD_TEST_MESSAGES_PER_ROOM || 5);
 const scenarioId = process.env.LOAD_TEST_SCENARIO || "weekend_trip";
+const agentIds = ["mediator_v1", "vibe_friend_v1", "observer_v1"];
 const reportTimeoutMs = Number(process.env.LOAD_TEST_REPORT_TIMEOUT_MS || 15000);
 const interMessageDelayMs = Number(process.env.LOAD_TEST_INTER_MESSAGE_DELAY_MS || 30);
 const settleBeforeReportMs = Number(process.env.LOAD_TEST_SETTLE_BEFORE_REPORT_MS || 1000);
@@ -39,6 +40,7 @@ async function main() {
         roomCount,
         usersPerRoom,
         messagesPerRoom,
+        aiAgentsSimulated: roomCount * agentIds.length,
         elapsedMs,
         messagesSent: metrics.messagesSent,
         reportsReady: metrics.reportRooms.size,
@@ -85,7 +87,7 @@ async function exerciseRoom(roomId, metrics) {
     type: "create_room",
     room_id: roomId,
     scenario_id: scenarioId,
-    agent_ids: ["mediator_v1", "vibe_friend_v1", "observer_v1"],
+    agent_ids: agentIds,
     display_name: "Load Host",
   });
   await wait(80);
