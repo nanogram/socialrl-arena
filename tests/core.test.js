@@ -344,8 +344,20 @@ assert.ok(Array.isArray(exported.transcript));
 assert.ok(
   exported.transcript
     .filter((message) => message.senderType === "ai")
-    .every((message) => message.senderId && message.modelName && message.promptVersion && message.policyVersion && message.decisionId),
-  "export transcript should preserve AI sender, model, prompt, policy, and decision metadata",
+    .every(
+      (message) =>
+        message.senderId &&
+        message.modelName &&
+        message.promptVersion &&
+        message.policyVersion &&
+        message.decisionId &&
+        Number.isFinite(message.latencyMs) &&
+        Number.isFinite(message.tokenCount) &&
+        "firstTokenLatencyMs" in message &&
+        "latency_ms" in message &&
+        "token_count" in message,
+    ),
+  "export transcript should preserve AI sender, latency, token, model, prompt, policy, and decision metadata",
 );
 assert.ok(
   exported.transcript.every((message) => "replyToMessageId" in message),

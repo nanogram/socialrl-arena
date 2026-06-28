@@ -35,4 +35,4 @@ The result is a working loop: live group chat, AI participation decisions, human
 - Add at least two feedback tags.
 - End session and show Shape Report.
 - Click `Apply Improved`, run sample again, and show before/after comparison.
-- Export JSON to show transcript/report portability, including archived baseline and improved run snapshots.
+- Export JSON to show transcript/report portability, including archived baseline and improved run snapshots plus sender, latency, token, model, prompt, and policy metadata.

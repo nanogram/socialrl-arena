@@ -230,6 +230,11 @@ function demoExportCheck(exported) {
       (message) =>
         message.senderId &&
         message.decisionId &&
+        Number.isFinite(message.latencyMs) &&
+        Number.isFinite(message.tokenCount) &&
+        "firstTokenLatencyMs" in message &&
+        "latency_ms" in message &&
+        "token_count" in message &&
         message.modelName &&
         message.promptVersion &&
         message.policyVersion,
@@ -240,7 +245,7 @@ function demoExportCheck(exported) {
     status: ok ? "pass" : "fail",
     detail: ok
       ? `${transcript.length} current transcript messages plus ${runs.length} run snapshots exported`
-      : "export JSON missing transcript/sender/reply/model or before-after run archive evidence",
+      : "export JSON missing transcript/sender/latency/token/reply/model or before-after run archive evidence",
   };
 }
 

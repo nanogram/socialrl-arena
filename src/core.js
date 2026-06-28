@@ -2190,9 +2190,15 @@ function exportTranscript(messages) {
     replyToMessageId: message.replyToMessageId,
     content: message.content,
     createdAt: message.createdAt,
+    latencyMs: message.latencyMs,
+    firstTokenLatencyMs: message.firstTokenLatencyMs,
+    tokenCount: message.tokenCount,
     modelName: message.modelName,
     promptVersion: message.promptVersion,
     policyVersion: message.policyVersion,
+    latency_ms: message.latencyMs,
+    first_token_latency_ms: message.firstTokenLatencyMs,
+    token_count: message.tokenCount,
     feedbackTags: Array.isArray(message.feedback) ? message.feedback.map((entry) => entry.tag) : [],
   }));
 }

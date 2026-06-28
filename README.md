@@ -130,7 +130,7 @@ docker compose exec app npm run migrate:postgres
 - Normal chat mode keeps active participants, invite, end-session, and report actions visible without exposing debug panels
 - Active policy/model/prompt visibility in the debug/eval panel
 - Toggle between normal chat and debug/eval views
-- Export transcript/report JSON
+- Export transcript/report JSON with sender, reply, latency, token, model, prompt, and policy metadata
 - Scripted sample session for quick demos
 - File-backed local persistence
 - Postgres schema, migration path, snapshots, and normalized table writes for messages, first-token/full-response latency, decisions, routing decisions, report jobs, feedback, and reports
