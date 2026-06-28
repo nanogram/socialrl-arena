@@ -709,9 +709,39 @@ function renderReportPage() {
           ${metric("Feedback", report.roomStats.feedbackTags)}
         </div>
       </article>
+      ${renderSystemPerformance(report.systemPerformance)}
       ${report.agents.map(renderExpandedAgentReport).join("")}
       ${renderComparison(report)}
     </section>
+  `;
+}
+
+function renderSystemPerformance(performance = {}) {
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>System Performance</strong></div>
+      <div class="metric-grid">
+        ${metric("Active rooms", performance.activeRooms || 0)}
+        ${metric("Msg/sec", performance.messagesPerSecond || 0)}
+        ${metric("WS total", performance.websocketConnectionsTotal || 0)}
+        ${metric("Reconnect", formatPercentValue(performance.reconnectRate))}
+        ${metric("P50 fanout", `${performance.p50FanoutLatencyMs || 0} ms`)}
+        ${metric("P95 fanout", `${performance.p95FanoutLatencyMs || 0} ms`)}
+        ${metric("P99 fanout", `${performance.p99FanoutLatencyMs || 0} ms`)}
+        ${metric("P50 first token", `${performance.p50FirstTokenLatencyMs || 0} ms`)}
+        ${metric("P95 first token", `${performance.p95FirstTokenLatencyMs || 0} ms`)}
+        ${metric("P99 first token", `${performance.p99FirstTokenLatencyMs || 0} ms`)}
+        ${metric("P50 response", `${performance.p50FullResponseLatencyMs || 0} ms`)}
+        ${metric("P95 response", `${performance.p95FullResponseLatencyMs || 0} ms`)}
+        ${metric("P99 response", `${performance.p99FullResponseLatencyMs || 0} ms`)}
+        ${metric("LLM errors", formatPercentValue(performance.llmErrorRate))}
+        ${metric("Timeouts", formatPercentValue(performance.timeoutRate))}
+        ${metric("Queue", performance.queueDepth || 0)}
+        ${metric("Queue max", performance.maxReportQueueDepth || 0)}
+        ${metric("Feedback p95", `${performance.feedbackWriteLatencyMs || 0} ms`)}
+        ${metric("Report", `${performance.reportGenerationLatencyMs || 0} ms`)}
+      </div>
+    </article>
   `;
 }
 
@@ -1434,6 +1464,10 @@ function metric(label, value) {
       <strong>${escapeHtml(String(value))}</strong>
     </div>
   `;
+}
+
+function formatPercentValue(value) {
+  return `${Math.round(Number(value || 0) * 100)}%`;
 }
 
 function formatDecision(decision) {

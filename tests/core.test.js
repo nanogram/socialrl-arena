@@ -134,8 +134,28 @@ assert.ok(mediatorReport.worstMessages.every((message) => "whatShouldHaveDoneIns
 assert.ok(Number.isFinite(mediatorReport.stats.averageMessagesPerMinute));
 assert.ok("routingSuccessRate" in mediatorReport.stats);
 assert.ok(mediatorReport.routingScores.planningScore >= 0);
-assert.ok("p99FullResponseLatencyMs" in report.systemPerformance);
-assert.ok("maxReportQueueDepth" in report.systemPerformance);
+for (const key of [
+  "activeRooms",
+  "messagesPerSecond",
+  "p50FanoutLatencyMs",
+  "p95FanoutLatencyMs",
+  "p99FanoutLatencyMs",
+  "p50FirstTokenLatencyMs",
+  "p95FirstTokenLatencyMs",
+  "p99FirstTokenLatencyMs",
+  "p50FullResponseLatencyMs",
+  "p95FullResponseLatencyMs",
+  "p99FullResponseLatencyMs",
+  "llmErrorRate",
+  "timeoutRate",
+  "reconnectRate",
+  "maxReportQueueDepth",
+  "feedbackWriteLatencyMs",
+  "reportGenerationLatencyMs",
+]) {
+  assert.ok(key in report.systemPerformance, `system performance should include ${key}`);
+}
+assert.ok(Number.isFinite(report.systemPerformance.messagesPerSecond));
 assert.ok(report.systemPerformance.reportGeneratedLocally);
 
 addSessionFeedback(
