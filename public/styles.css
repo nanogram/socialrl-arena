@@ -208,8 +208,8 @@ body[data-view="landing"] .messages {
 }
 
 .chat-panel {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   overflow: hidden;
   border-right: 1px solid var(--line);
@@ -228,6 +228,7 @@ body[data-view="landing"] .messages {
 }
 
 body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -278,6 +279,7 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
 }
 
 body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:empty) {
+  flex: 0 0 auto;
   display: block;
   border-top: 1px solid var(--line);
   padding: 12px 18px;
@@ -285,6 +287,7 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 }
 
 .reply-preview:not(:empty) {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -361,6 +364,7 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 }
 
 .messages {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -826,6 +830,7 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 }
 
 .composer {
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: minmax(96px, 112px) minmax(0, 1fr) auto;
   align-items: center;
@@ -930,6 +935,9 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 }
 
 .panel-body {
+  max-height: min(58vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 16px 16px;
 }
 
@@ -1409,6 +1417,10 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   .side-panel {
     grid-auto-rows: auto;
     height: auto;
+    max-height: none;
+  }
+
+  .panel-body {
     max-height: none;
   }
 
