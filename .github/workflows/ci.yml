@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start memory-backed server
+        run: |
+          PORT=3000 SOCIALRL_STORAGE=memory npm start > /tmp/socialrl-ci.log 2>&1 &
+          for attempt in $(seq 1 50); do
+            if curl -fsS http://localhost:3000/api/ready > /dev/null; then
+              exit 0
+            fi
+            sleep 0.2
+          done
+          cat /tmp/socialrl-ci.log
+          exit 1
+
+      - name: Run preflight
+        run: npm run preflight
+
+      - name: Run smoke load test
+        run: npm run load-test:smoke

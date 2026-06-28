@@ -18,6 +18,7 @@ async function main() {
 function checkFiles() {
   const required = [
     "README.md",
+    ".github/workflows/ci.yml",
     "Dockerfile",
     "docker-compose.yml",
     ".env.example",

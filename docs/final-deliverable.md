@@ -30,7 +30,10 @@ Run final local verification:
 
 ```bash
 npm run preflight
+npm run load-test:smoke
 ```
+
+After pushing to GitHub, the `.github/workflows/ci.yml` workflow should run the same preflight and smoke-load gates against a memory-backed server.
 
 ## Reviewer Flow
 
