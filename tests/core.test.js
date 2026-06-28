@@ -87,6 +87,10 @@ for (const roomType of [
 
 const replyRoom = createRoom("reply-room");
 const replyRoot = addHumanMessage(replyRoom, "Alex", "Cheap is the constraint.");
+assert.throws(
+  () => addFeedback(replyRoom, replyRoot.id, "helpful", "test_user"),
+  /only be added to AI messages/,
+);
 const humanReply = addHumanMessage(replyRoom, "Jules", "Agreeing with Alex here.", {
   replyToMessageId: replyRoot.id,
 });

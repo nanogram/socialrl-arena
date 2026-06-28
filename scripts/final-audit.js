@@ -25,6 +25,7 @@ function main() {
     ...requiredFiles.map((file) => fileCheck(file)),
     gitRemoteCheck(),
     debugTelemetryCheck(),
+    aiOnlyFeedbackCheck(),
     reportJudgePromptCheck(),
     ...latestDemoArtifactChecks(),
     ...targetLoadArtifactChecks(),
@@ -97,6 +98,24 @@ function reportJudgePromptCheck() {
     detail: missing.length
       ? `report judge prompt missing ${missing.join(", ")}`
       : "report judge prompt includes transcript, decisions, feedback, latency, agent config, evidence, decision review, and routing scores",
+  };
+}
+
+function aiOnlyFeedbackCheck() {
+  const corePath = path.join(process.cwd(), "src", "core.js");
+  const loadPath = path.join(process.cwd(), "scripts", "load-test.js");
+  const core = fs.existsSync(corePath) ? fs.readFileSync(corePath, "utf8") : "";
+  const loadTest = fs.existsSync(loadPath) ? fs.readFileSync(loadPath, "utf8") : "";
+  const ok =
+    core.includes("Message feedback can only be added to AI messages") &&
+    loadTest.includes("lastAiMessageId") &&
+    !loadTest.includes("lastSentHumanMessageId");
+  return {
+    name: "feedback:ai-only",
+    status: ok ? "pass" : "fail",
+    detail: ok
+      ? "runtime and load test attach message feedback only to AI messages"
+      : "message feedback must reject human messages and load test must tag an AI message",
   };
 }
 
@@ -294,6 +313,12 @@ function demoReportCheck(exported) {
 function demoExportCheck(exported) {
   const transcript = Array.isArray(exported.transcript) ? exported.transcript : [];
   const aiTranscript = transcript.filter((message) => message.senderType === "ai");
+  const archivedTranscript = Array.isArray(exported.runs)
+    ? exported.runs.flatMap((run) => (Array.isArray(run.transcript) ? run.transcript : []))
+    : [];
+  const humanTranscript = [...transcript, ...archivedTranscript].filter(
+    (message) => message.senderType === "human",
+  );
   const runs = Array.isArray(exported.runs) ? exported.runs : [];
   const baselineRun = runs.find((run) => run.policyMode === "baseline");
   const improvedRun = runs.find((run) => run.policyMode === "improved");
@@ -315,6 +340,9 @@ function demoExportCheck(exported) {
     transcript.every((message) => "senderId" in message) &&
     transcript.every((message) => "feedbackTags" in message) &&
     transcript.every((message) => "replyToMessageId" in message) &&
+    humanTranscript.every(
+      (message) => Array.isArray(message.feedbackTags) && message.feedbackTags.length === 0,
+    ) &&
     transcript.some((message) => message.replyToMessageId) &&
     aiTranscript.every(
       (message) =>
@@ -335,7 +363,7 @@ function demoExportCheck(exported) {
     status: ok ? "pass" : "fail",
     detail: ok
       ? `${transcript.length} current transcript messages plus ${runs.length} run snapshots exported`
-      : "export JSON missing transcript/sender/latency/token/reply/model or before-after run archive evidence",
+      : "export JSON missing transcript/sender/latency/token/reply/model, AI-only feedback, or before-after run archive evidence",
   };
 }
 

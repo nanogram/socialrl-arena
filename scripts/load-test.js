@@ -114,19 +114,19 @@ async function exerciseRoom(roomId, metrics) {
     metrics.messagesSent += 1;
     await waitFor(() => !socket.pendingMessageSentAt, 5000);
 
-    if (index === 0 && socket.lastSentHumanMessageId) {
-      socket.pendingFeedbackSentAt = Date.now();
-      socket.pendingFeedbackMessageId = socket.lastSentHumanMessageId;
-      socket.send({
-        type: "add_feedback",
-        message_id: socket.lastSentHumanMessageId,
-        tag: "helped_us_decide",
-      });
-      await waitFor(() => !socket.pendingFeedbackSentAt, 5000);
-    }
-
     await wait(interMessageDelayMs);
   }
+
+  await waitFor(() => sockets.some((socket) => socket.lastAiMessageId), 8000);
+  const feedbackSocket = sockets.find((socket) => socket.lastAiMessageId) || sockets[0];
+  sockets[0].pendingFeedbackSentAt = Date.now();
+  sockets[0].pendingFeedbackMessageId = feedbackSocket.lastAiMessageId;
+  sockets[0].send({
+    type: "add_feedback",
+    message_id: feedbackSocket.lastAiMessageId,
+    tag: "helped_us_decide",
+  });
+  await waitFor(() => !sockets[0].pendingFeedbackSentAt, 5000);
 
   await wait(settleBeforeReportMs);
 
@@ -171,7 +171,7 @@ class JsonSocket {
     this.pendingMessageSentAt = null;
     this.pendingMessageContent = null;
     this.pendingMessageSender = null;
-    this.lastSentHumanMessageId = null;
+    this.lastAiMessageId = null;
     this.pendingFeedbackSentAt = null;
     this.pendingFeedbackMessageId = null;
     this.pendingReportSentAt = null;
@@ -214,7 +214,6 @@ class JsonSocket {
       event.message.content === this.pendingMessageContent
     ) {
       this.metrics.messageAckLatencies.push(Date.now() - this.pendingMessageSentAt);
-      this.lastSentHumanMessageId = event.message.id;
       this.pendingMessageSentAt = null;
       this.pendingMessageContent = null;
       this.pendingMessageSender = null;
@@ -235,6 +234,7 @@ class JsonSocket {
       !this.metrics.aiMessageIds.has(event.message.id)
     ) {
       this.metrics.aiMessageIds.add(event.message.id);
+      this.lastAiMessageId = event.message.id;
       if (Number.isFinite(event.message.firstTokenLatencyMs)) {
         this.metrics.firstTokenLatencies.push(event.message.firstTokenLatencyMs);
       }

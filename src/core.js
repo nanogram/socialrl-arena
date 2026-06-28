@@ -1171,6 +1171,9 @@ function addFeedback(room, messageId, tag, userId) {
   if (!message) {
     throw new Error(`Unknown message: ${messageId}`);
   }
+  if (message.senderType !== "ai") {
+    throw new Error("Message feedback can only be added to AI messages.");
+  }
 
   const feedback = {
     id: randomUUID(),
