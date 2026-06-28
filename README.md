@@ -104,73 +104,6 @@ docker compose up --build
 docker compose exec app npm run migrate:postgres
 ```
 
-## Current Scope
-
-- Landing page at `/` with product loop entry points
-- Create and join rooms through `/rooms/:roomId`
-- Join/update a display name and see active human participants plus selected AI agents
-- Invite links
-- Scenario selection
-- Nine scenarios covering planning, drama/conflict, casual hangout, fandom/RP, study/work, advice, game night, debate, and support/emotional rooms
-- Weekend Trip Planning demo covers budget, nightlife, nature, and a derailing fourth friend
-- Three agents: Mediator, Vibe Friend, and Observer
-- Room setup enforces 2-3 selected AI agents per session
-- WebSocket fanout
-- Reply-to message targeting for human replies and AI responses to trigger messages
-- Agent speak/wait/stay-silent decisions
-- Decision metadata includes target users when an agent should include a quieter participant
-- Explicit stayed-silent and waited WebSocket events for debug/eval views
-- Router decision panel with selected agent, blocked agents, group state, and candidate scores
-- Rule-based router policy for planning, tense, emotionally sensitive, chaotic, stalled, playful/high-momentum, and feedback-adjusted turns
-- Streaming AI message simulation
-- WebSocket payloads include spec-style snake_case aliases alongside internal camelCase fields
-- WebSocket client events accept spec-style snake_case and camelCase field names, including event-level `room_id`
-- Human and AI messages preserve sender identity for transcript export and normalized Postgres writes
-- Full AI-message feedback taxonomy for timing, social awareness, usefulness, personality, and message quality
-- Session-level feedback, including route-next agent preference
-- Normal-mode end-of-session feedback prompt for useful/annoying/route-next/reached-decision/invite-again signals
-- Late end-of-session feedback refreshes the latest Agent Report instead of being ignored
-- Agent Performance Reports
-- Agent routing success, messages-per-minute, human-before/after, human momentum lift, and suitability scores
-- Reply-targeting, target-user, wrong-person, and quiet-participant targeting stats in agent reports
-- Per-agent participation decision review showing recent speak/wait/stay-silent reasons, trigger messages, router selection, and feedback outcome
-- Routing recommendations include session feedback route-next/useful/annoying vote evidence
-- Report evidence manifest summarizes transcript, decisions, feedback, latency, agent config, scenario, and run archive inputs
-- Report-generated policy diffs carried into the improved-policy rerun
-- Side-by-side before/after comparison with baseline and improved metrics
-- Run Archive card on reports summarizes baseline/current run transcripts, decisions, feedback, and reports
-- Exported run archive preserves baseline and improved transcripts, decisions, feedback, and reports
-- Agent-specific review pages with scorecard, quantitative stats, failure modes, policy diff, routing recommendation, and best/worst message context
-- Normal chat mode keeps active participants, invite, end-session, and report actions visible without exposing debug panels
-- Active policy/model/prompt visibility in the debug/eval panel
-- Live debug/eval telemetry for latency, report queue, feedback counts, group state, active policy, and model steps
-- Toggle between normal chat and debug/eval views
-- Export transcript/report JSON with sender, reply, latency, token, model, prompt, and policy metadata
-- Scripted sample session for quick demos
-- File-backed local persistence
-- Postgres schema, migration path, snapshots, and normalized table writes for messages, first-token/full-response latency, decisions, routing decisions, report jobs, feedback, and reports
-- Optional HTTP LLM provider hook
-- Optional OpenAI Responses API provider hook
-- Per-stage OpenAI model routing for decision, router, message, and report calls
-- Context-aware model-routing evidence showing fast tiers for classification/decision/routing/feedback and strong tiers for emotional/conflict responses, reports, and policy repair
-- Optional external report judge for Agent Performance Reports
-- Versioned decision/router/message/report judge prompt templates
-- Report judge prompts include full transcript, decisions, routing, feedback, latency, agent config, and evidence manifests
-- Synthetic WebSocket load test with message acknowledgement, first-token, feedback acknowledgement, report throughput, and socket-stability metrics
-- Machine-readable target-load artifact for final audit
-- Reported p50/p95/p99 fanout, first-token, and full-response latency fields
-- External model fallback failures increment LLM error and timeout metrics in reports
-- Reports include live active-room and process room-count context from the server worker
-- Docker Compose deployment path
-- Render blueprint for hosted web service plus managed Postgres
-- 90-second demo script
-- GitHub Pages demo video page
-- One-page writeup: `docs/evaluating-ai-as-group-chat-participant.md`
-- Performance report: `docs/performance-report.md`
-- Final deliverable checklist: `docs/final-deliverable.md`
-- Public deployment checklist: `docs/public-deployment-checklist.md`
-- GitHub Actions CI workflow for preflight, smoke load, seeded demo artifact, target-load artifact, and local final-audit verification
-
 ## Routes
 
 - `/` - landing page
@@ -207,22 +140,3 @@ flowchart LR
   Core --> Providers["Local deterministic agents\nOpenAI Responses\nGeneric HTTP LLM"]
   Load["Synthetic WebSocket load test"] --> WS
 ```
-
-## Final Submission Status
-
-Local implementation is complete against the saved spec and is checked locally and in CI by:
-
-```bash
-npm run preflight
-npm run load-test:smoke
-npm run load-test:target-artifact
-npm run final-audit:local
-npm run final-handoff
-```
-
-`npm run final-audit:local` validates the local package without external links. `npm run final-audit` validates the local package plus the final external links. The remaining submission-only items are:
-
-- Add a GitHub `origin` remote and push this repository.
-- Deploy the app to a public URL.
-- Publish or provide the demo video page using `docs/index.html`.
-- Run `npm run final-audit` with `LIVE_DEMO_URL`, `GITHUB_REPO_URL`, and `DEMO_VIDEO_URL`.
