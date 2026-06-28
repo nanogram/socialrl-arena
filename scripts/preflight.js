@@ -28,6 +28,8 @@ function checkFiles() {
     "docs/deployment.md",
     "docs/evaluating-ai-as-group-chat-participant.md",
     "docs/final-deliverable.md",
+    "docs/index.html",
+    "docs/assets/socialrl-demo.mp4",
     "docs/performance-report.md",
     "docs/public-deployment-checklist.md",
     "src/core.js",
@@ -81,6 +83,7 @@ function checkSpecMarkers() {
   const provider = fs.readFileSync("src/llmProvider.js", "utf8");
   const env = fs.readFileSync(".env.example", "utf8");
   const readme = fs.readFileSync("README.md", "utf8");
+  const docsIndex = fs.readFileSync("docs/index.html", "utf8");
   const loadTest = fs.readFileSync("scripts/load-test.js", "utf8");
   const demoSeed = fs.readFileSync("scripts/demo-seed.js", "utf8");
   const targetLoad = fs.readFileSync("scripts/run-target-load.js", "utf8");
@@ -101,11 +104,12 @@ function checkSpecMarkers() {
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "recordProviderFailure", "routerModelName"]],
     ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["buildReportEvalInputs", "fullTranscript", "messageLatency", "evidenceManifest", "emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
-    ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports", "Final Submission Status", "LIVE_DEMO_URL", "GITHUB_REPO_URL", "LOOM_URL"]],
+    ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports", "Final Submission Status", "LIVE_DEMO_URL", "GITHUB_REPO_URL", "DEMO_VIDEO_URL"]],
+    ["docs/index.html", docsIndex, ["assets/socialrl-demo.mp4", "SocialRL Arena Demo", "GitHub repository"]],
     ["scripts/load-test.js", loadTest, ["lastAiMessageId", "LOAD_TEST_OUTPUT_PATH", "passed"]],
     ["scripts/demo-seed.js", demoSeed, ["require(\"https\")", "baseUrl.startsWith(\"https:\")"]],
     ["scripts/run-target-load.js", targetLoad, ["SOCIALRL_STORAGE", "target-load-latest.json", "LOAD_TEST_MESSAGES_PER_ROOM"]],
-    ["scripts/final-audit.js", finalAudit, ["FINAL_AUDIT_LOCAL_ONLY", "mode: localOnly", "aiOnlyFeedbackCheck", "demoScenarioFidelityCheck", "reportJudgePromptCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
+    ["scripts/final-audit.js", finalAudit, ["FINAL_AUDIT_LOCAL_ONLY", "DEMO_VIDEO_URL", "demoVideoUrlCheck", "mode: localOnly", "aiOnlyFeedbackCheck", "demoScenarioFidelityCheck", "reportJudgePromptCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
     ["scripts/final-handoff.js", finalHandoff, ["SocialRL Arena Final Handoff", "Target Load Evidence", "Local Audit", "Final Audit", "Reviewer Path"]],
     ["package.json", pkg, ["load-test:target-artifact", "final-audit:local", "final-handoff"]],
   ]) {

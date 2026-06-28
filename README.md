@@ -155,6 +155,7 @@ docker compose exec app npm run migrate:postgres
 - Docker Compose deployment path
 - Render blueprint for hosted web service plus managed Postgres
 - 90-second demo script
+- GitHub Pages demo video page
 - One-page writeup: `docs/evaluating-ai-as-group-chat-participant.md`
 - Performance report: `docs/performance-report.md`
 - Final deliverable checklist: `docs/final-deliverable.md`
@@ -214,5 +215,5 @@ npm run final-handoff
 
 - Add a GitHub `origin` remote and push this repository.
 - Deploy the app to a public URL.
-- Record the 90-second Loom using `docs/demo-script.md`.
-- Run `npm run final-audit` with `LIVE_DEMO_URL`, `GITHUB_REPO_URL`, and `LOOM_URL`.
+- Publish or provide the demo video page using `docs/index.html`.
+- Run `npm run final-audit` with `LIVE_DEMO_URL`, `GITHUB_REPO_URL`, and `DEMO_VIDEO_URL`.

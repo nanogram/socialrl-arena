@@ -62,4 +62,4 @@ Add these to the final handoff:
 - Report: `https://<host>/rooms/<room-id>/report`
 - Shape Review: `https://<host>/rooms/<room-id>/shapes/mediator_v1`
 - GitHub repo: `<github-repo-url>`
-- Loom: `<loom-url>`
+- Demo video: `<demo-video-url>`

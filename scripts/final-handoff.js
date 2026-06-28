@@ -30,7 +30,7 @@ function main() {
       "",
       `- Live demo: ${process.env.LIVE_DEMO_URL || "pending"}`,
       `- GitHub repo: ${process.env.GITHUB_REPO_URL || "pending"}`,
-      `- Loom: ${process.env.LOOM_URL || "pending"}`,
+      `- Demo video: ${process.env.DEMO_VIDEO_URL || process.env.LOOM_URL || "pending"}`,
       "",
       "## Latest Local Demo",
       "",

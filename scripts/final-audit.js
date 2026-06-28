@@ -8,6 +8,8 @@ const requiredFiles = [
   "docs/deployment.md",
   "docs/evaluating-ai-as-group-chat-participant.md",
   "docs/final-deliverable.md",
+  "docs/index.html",
+  "docs/assets/socialrl-demo.mp4",
   "docs/performance-report.md",
   "docs/public-deployment-checklist.md",
   "render.yaml",
@@ -17,7 +19,6 @@ const requiredFiles = [
 const requiredEnvLinks = [
   ["LIVE_DEMO_URL", "live demo"],
   ["GITHUB_REPO_URL", "GitHub repo"],
-  ["LOOM_URL", "90-second Loom"],
 ];
 
 function main() {
@@ -30,7 +31,7 @@ function main() {
     reportJudgePromptCheck(),
     ...latestDemoArtifactChecks(),
     ...targetLoadArtifactChecks(),
-    ...(localOnly ? [] : requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label))),
+    ...(localOnly ? [] : [...requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label)), demoVideoUrlCheck()]),
   ];
   const failed = checks.filter((check) => check.status !== "pass");
 
@@ -473,6 +474,19 @@ function envUrlCheck(name, label) {
     name: `link:${name}`,
     status: valid ? "pass" : "fail",
     detail: valid ? `${label}: ${value}` : `set ${name} to the ${label} URL`,
+  };
+}
+
+function demoVideoUrlCheck() {
+  const value = process.env.DEMO_VIDEO_URL || process.env.LOOM_URL || "";
+  const source = process.env.DEMO_VIDEO_URL ? "DEMO_VIDEO_URL" : "LOOM_URL";
+  const valid = /^https?:\/\/[^ ]+\.[^ ]+/.test(value);
+  return {
+    name: "link:DEMO_VIDEO_URL",
+    status: valid ? "pass" : "fail",
+    detail: valid
+      ? `demo video (${source}): ${value}`
+      : "set DEMO_VIDEO_URL to a shareable demo video page or LOOM_URL to a Loom video",
   };
 }
 

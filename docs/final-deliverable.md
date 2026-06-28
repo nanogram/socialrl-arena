@@ -4,7 +4,7 @@
 
 - Live demo: deploy the app and use the resulting `/create` or seeded room URL.
 - GitHub repo: push this project repository.
-- 90-second Loom: record the flow from `docs/demo-script.md`.
+- Demo video: use the GitHub Pages video page or another shareable recording URL.
 - One-page writeup: `docs/evaluating-ai-as-group-chat-participant.md`.
 - Deployment checklist: `docs/public-deployment-checklist.md`.
 
@@ -41,12 +41,12 @@ The target-load command writes `demo-artifacts/target-load-latest.json`, which `
 
 The handoff command writes `demo-artifacts/final-handoff.md`, a local summary of the latest seeded demo, target-load evidence, audit status, and remaining external links.
 
-After GitHub, deployment, and Loom are ready, audit the final handoff links:
+After GitHub, deployment, and demo video are ready, audit the final handoff links:
 
 ```bash
 LIVE_DEMO_URL=https://<host>/rooms/<room-id> \
 GITHUB_REPO_URL=https://github.com/<owner>/<repo> \
-LOOM_URL=https://www.loom.com/share/<video-id> \
+DEMO_VIDEO_URL=https://<owner>.github.io/<repo>/ \
 npm run final-audit
 ```
 
