@@ -23,7 +23,10 @@ const quickFeedbackOrder = [
   "ignored_quiet_person",
 ];
 
+const maxNormalParticipants = 6;
+
 const messagesEl = document.querySelector("#messages");
+const normalChatBarEl = document.querySelector("#normalChatBar");
 const decisionsEl = document.querySelector("#decisions");
 const routingDecisionsEl = document.querySelector("#routingDecisions");
 const reportEl = document.querySelector("#report");
@@ -310,6 +313,7 @@ function upsertById(collection, item) {
 function render() {
   renderStatus();
   renderSetup();
+  renderNormalChatBar();
   renderPrimaryPanel();
   renderParticipants();
   renderPolicies();
@@ -317,6 +321,80 @@ function render() {
   renderRoutingDecisions();
   renderRoomMetrics();
   renderReport();
+}
+
+function renderNormalChatBar() {
+  const room = state.room;
+  if (!room) {
+    normalChatBarEl.innerHTML = "";
+    return;
+  }
+
+  const participants = [
+    ...room.participants.map((participant) => ({
+      name: participant.displayName,
+      type: "Human",
+    })),
+    ...room.agents.map((agent) => ({
+      name: agent.name,
+      type: "AI",
+    })),
+  ];
+  const visibleParticipants = participants.slice(0, maxNormalParticipants);
+  const overflow = Math.max(0, participants.length - visibleParticipants.length);
+  const latestReport = room.reports[room.reports.length - 1] || null;
+
+  normalChatBarEl.innerHTML = `
+    <div class="normal-participants" aria-label="Active participants">
+      ${visibleParticipants
+        .map(
+          (participant) => `
+            <span class="normal-participant">
+              <span class="avatar mini">${escapeHtml(initialsFor(participant.name))}</span>
+              <span>${escapeHtml(participant.name)}</span>
+              <small>${escapeHtml(participant.type)}</small>
+            </span>
+          `,
+        )
+        .join("")}
+      ${overflow ? `<span class="normal-participant more">+${overflow}</span>` : ""}
+    </div>
+    <div class="normal-actions">
+      <button type="button" class="quiet compact-button" data-normal-action="invite">Invite</button>
+      <button type="button" class="compact-button" data-normal-action="end">End + Report</button>
+      ${
+        latestReport
+          ? `<button type="button" class="quiet compact-button" data-normal-action="report">Report</button>`
+          : ""
+      }
+    </div>
+  `;
+
+  normalChatBarEl.querySelectorAll("[data-normal-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.normalAction === "invite") {
+        copyInviteLink();
+        return;
+      }
+      if (button.dataset.normalAction === "end") {
+        send({ type: "end_session" });
+        return;
+      }
+      if (button.dataset.normalAction === "report" && state.room) {
+        window.location.href = `/rooms/${state.room.id}/report`;
+      }
+    });
+  });
+}
+
+function copyInviteLink() {
+  if (!state.room) return;
+  const inviteUrl = `${window.location.origin}/rooms/${state.room.id}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(inviteUrl).catch(() => {});
+  }
+  inviteLinkInput.value = inviteUrl;
+  inviteLinkInput.select();
 }
 
 function renderStatus() {

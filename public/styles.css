@@ -141,9 +141,63 @@ body[data-view="chat"][data-debug-panel="hidden"] .message {
 
 .chat-panel {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto 1fr auto;
   min-height: 0;
   border-right: 1px solid var(--line);
+}
+
+.normal-chat-bar {
+  display: none;
+}
+
+body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.normal-participants,
+.normal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.normal-participants {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.normal-actions {
+  flex: 0 0 auto;
+}
+
+.normal-participant {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px 8px 2px 3px;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.normal-participant small {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.normal-participant.more {
+  padding: 0 9px;
+  color: var(--muted);
 }
 
 .messages {
@@ -822,6 +876,19 @@ body[data-view="chat"][data-debug-panel="hidden"] .message {
 
   .toolbar.compact {
     grid-template-columns: 1fr;
+  }
+
+  body[data-view="chat"][data-debug-panel="hidden"] .normal-chat-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .normal-actions {
+    width: 100%;
+  }
+
+  .normal-actions button {
+    flex: 1;
   }
 
   .setup-grid,
