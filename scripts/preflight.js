@@ -105,7 +105,7 @@ function checkSpecMarkers() {
     ["src/llmProvider.js", provider, ["OPENAI_DECISION_MODEL", "modelFor", "recordProviderFailure", "routerModelName"]],
     ["src/prompts.js", fs.readFileSync("src/prompts.js", "utf8"), ["buildReportEvalInputs", "fullTranscript", "messageLatency", "evidenceManifest", "emotionally_sensitive", "stalled", "chaotic"]],
     [".env.example", env, ["OPENAI_DECISION_MODEL", "OPENAI_ROUTER_MODEL", "OPENAI_MESSAGE_MODEL", "OPENAI_REPORT_MODEL"]],
-    ["README.md", readme, ["Demo Video", "socialrl-demo.gif", "socialrl-demo.mp4", "flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports", "Final Submission Status", "LIVE_DEMO_URL", "GITHUB_REPO_URL", "DEMO_VIDEO_URL"]],
+    ["README.md", readme, ["Demo Video", "socialrl-demo.gif", "flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports", "Final Submission Status", "LIVE_DEMO_URL", "GITHUB_REPO_URL", "DEMO_VIDEO_URL"]],
     ["docs/index.html", docsIndex, ["assets/socialrl-demo.mp4", "animated preview", "SocialRL Arena Demo", "GitHub repository"]],
     ["scripts/load-test.js", loadTest, ["lastAiMessageId", "LOAD_TEST_OUTPUT_PATH", "passed"]],
     ["scripts/demo-seed.js", demoSeed, ["require(\"https\")", "baseUrl.startsWith(\"https:\")"]],
