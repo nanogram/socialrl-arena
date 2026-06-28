@@ -78,7 +78,7 @@ function checkSpecMarkers() {
 
   for (const [file, body, markers] of [
     ["public/index.html", html, ["debugToggleButton", "displayNameInput", "normalChatBar", "normalSessionFeedback", "participants", "policies", "routingDecisions"]],
-    ["public/app.js", app, ["AI Shape", "agentSelectionRules", "basePersonality", "candidateScores", "comparisonColumn", "copyInviteLink", "normalAgentOptions", "renderDecisionReview", "renderExampleContext", "renderFailureModeCard", "renderNormalChatBar", "renderNormalSessionFeedback", "renderParticipants", "renderPolicies", "renderRoutingDecisions", "renderRoutingFeedbackVotes", "renderRuleAdjustments", "renderShapeStats", "renderSystemPerformance", "renderThinkingState", "targetUser", "socialrl_debug_panel", "socialrl_display_name"]],
+    ["public/app.js", app, ["AI Shape", "agentSelectionRules", "basePersonality", "candidateScores", "comparisonColumn", "copyInviteLink", "landing", "normalAgentOptions", "renderDecisionReview", "renderExampleContext", "renderFailureModeCard", "renderLandingPage", "renderNormalChatBar", "renderNormalSessionFeedback", "renderParticipants", "renderPolicies", "renderRoutingDecisions", "renderRoutingFeedbackVotes", "renderRuleAdjustments", "renderShapeStats", "renderSystemPerformance", "renderThinkingState", "targetUser", "socialrl_debug_panel", "socialrl_display_name"]],
     ["src/server.js", server, ["addMessageAliases", "agent_stayed_silent", "agent_waited", "eventValue", "message_stream_delta", "report_url", "resolveEventRoom", "sender_name", "session_feedback_refresh"]],
     ["src/core.js", core, ["activePolicyOverrides", "agentSelectionRules", "applyRoutingPolicy", "buildDecisionReview", "buildRoutingRecommendationReason", "chaotic", "decisionReview", "detectQuietParticipant", "emotionallySensitive", "generateImprovedPolicy", "pickRoutedWinner", "refreshLatestReport", "routingScores", "roomsTracked", "stalled", "targetUserForDecision", "p99FirstTokenLatencyMs", "p99FullResponseLatencyMs", "llmErrorRate", "routeNextAgentCounts"]],
     ["src/storage.js", storage, ["decision_review", "firstTokenLatencyMs", "first_token_latency_ms", "insertRoutingDecisions", "insertReportJobs", "routing_decisions", "report_jobs"]],
@@ -122,6 +122,13 @@ async function checkServer() {
 
   const rooms = await fetchJson("/api/rooms");
   if (!Array.isArray(rooms.rooms)) throw new Error("Room index did not return rooms array.");
+
+  for (const path of ["/", "/create", "/rooms/demo-room"]) {
+    const page = await fetchText(path);
+    if (!page.includes("SocialRL Arena") || !page.includes("/app.js")) {
+      throw new Error(`Page route did not return the SPA shell: ${path}`);
+    }
+  }
 }
 
 function checkPerformanceReport() {
@@ -157,6 +164,26 @@ function fetchJson(path) {
             return;
           }
           resolve(JSON.parse(body));
+        });
+      })
+      .on("error", reject);
+  });
+}
+
+function fetchText(path) {
+  return new Promise((resolve, reject) => {
+    http
+      .get(`${baseUrl}${path}`, (res) => {
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+        res.on("end", () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+            return;
+          }
+          resolve(body);
         });
       })
       .on("error", reject);

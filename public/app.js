@@ -569,6 +569,11 @@ function renderPrimaryPanel() {
     return;
   }
 
+  if (view.type === "landing") {
+    renderLandingPage();
+    return;
+  }
+
   if (view.type === "report") {
     renderReportPage();
     return;
@@ -580,6 +585,82 @@ function renderPrimaryPanel() {
   }
 
   renderMessages();
+}
+
+function renderLandingPage() {
+  const room = state.room;
+  const latestRoom = state.recentRooms.find((candidate) => candidate.reports > 0) || state.recentRooms[0];
+  const demoHref = latestRoom ? `/rooms/${latestRoom.id}` : "/rooms/demo-room";
+
+  messagesEl.innerHTML = `
+    <section class="landing-page">
+      <section class="landing-hero" aria-label="SocialRL Arena landing">
+        <div class="landing-copy">
+          <span class="landing-eyebrow">Realtime multi-agent eval</span>
+          <h2>SocialRL Arena</h2>
+          <p>${escapeHtml(
+            "Evaluate whether AI agents should speak, how they affect group dynamics, and which Shape should be routed into the next conversation.",
+          )}</p>
+          <div class="landing-actions">
+            <a class="button-link primary" href="/create">Create Room</a>
+            <a class="button-link" href="${demoHref}">Open Demo</a>
+          </div>
+        </div>
+        <div class="landing-product" aria-hidden="true">
+          <div class="landing-chat-window">
+            <div class="landing-window-top">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="landing-message human">Alex: cheap but still fun</div>
+            <div class="landing-route-row">
+              <span class="landing-agent mediator">Mediator</span>
+              <span class="landing-decision">speak · 84%</span>
+              <span class="landing-chip">selected</span>
+            </div>
+            <div class="landing-route-row muted">
+              <span class="landing-agent vibe">Vibe Friend</span>
+              <span class="landing-decision">wait · 61%</span>
+              <span class="landing-chip">blocked</span>
+            </div>
+            <div class="landing-message ai">Mediator: Want to pick the constraint first?</div>
+            <div class="landing-feedback">
+              <span>helped us decide</span>
+              <span>good timing</span>
+              <span>route next</span>
+            </div>
+          </div>
+          <div class="landing-report-window">
+            <strong>Shape Report</strong>
+            <div class="landing-score-grid">
+              <span>Timing <b>4</b></span>
+              <span>Restraint <b>5</b></span>
+              <span>Decision <b>4</b></span>
+              <span>Fun <b>3</b></span>
+            </div>
+            <div class="landing-policy-line"></div>
+            <div class="landing-policy-line short"></div>
+          </div>
+        </div>
+      </section>
+      <section class="landing-strip" aria-label="Evaluation loop">
+        ${landingMetric("Agents", room ? room.availableAgents.length : 3)}
+        ${landingMetric("Scenarios", room ? room.scenarios.length : 3)}
+        ${landingMetric("Recent Rooms", state.recentRooms.length)}
+        ${landingMetric("Loop", "before/after")}
+      </section>
+    </section>
+  `;
+}
+
+function landingMetric(label, value) {
+  return `
+    <div class="landing-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(String(value))}</strong>
+    </div>
+  `;
 }
 
 function renderCreatePage() {
@@ -1495,7 +1576,7 @@ function getInitialRoomId() {
 
 function syncUrl(roomId) {
   const view = getViewMode();
-  if (view.type === "create") return;
+  if (view.type === "create" || view.type === "landing") return;
   const nextPath = `/rooms/${roomId}`;
   const pathParts = window.location.pathname.split("/").filter(Boolean);
   const isRoomSubpage =
@@ -1509,7 +1590,10 @@ function syncUrl(roomId) {
 
 function getViewMode() {
   const parts = window.location.pathname.split("/").filter(Boolean);
-  if (parts.length === 0 || parts[0] === "create") {
+  if (parts.length === 0) {
+    return { type: "landing" };
+  }
+  if (parts[0] === "create") {
     return { type: "create" };
   }
   if (parts[0] === "rooms" && parts[2] === "report") {
@@ -1529,7 +1613,9 @@ async function refreshRoomIndex() {
     const body = await response.json();
     state.recentRooms = Array.isArray(body.rooms) ? body.rooms : [];
     state.recentRoomsLoaded = true;
-    if (getViewMode().type === "create") renderCreatePage();
+    const view = getViewMode();
+    if (view.type === "create") renderCreatePage();
+    if (view.type === "landing") renderLandingPage();
   } catch (error) {
     console.error(error);
   } finally {

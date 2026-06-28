@@ -94,6 +94,7 @@ docker compose exec app npm run migrate:postgres
 
 ## Current Scope
 
+- Landing page at `/` with product loop entry points
 - Create and join rooms through `/rooms/:roomId`
 - Join/update a display name and see active human participants plus selected AI Shapes
 - Invite links
@@ -148,6 +149,7 @@ docker compose exec app npm run migrate:postgres
 
 ## Routes
 
+- `/` - landing page
 - `/rooms/:roomId` - realtime chat and debug/eval view
 - `/rooms/:roomId/report` - latest session report page
 - `/rooms/:roomId/shapes/:agentId` - latest Shape review page

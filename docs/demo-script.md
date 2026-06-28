@@ -3,9 +3,10 @@
 ## Setup
 
 1. Open `/rooms/demo-room`.
-2. Select `Weekend Trip Planning`.
-3. Keep all three agents enabled.
-4. Click `Run Sample`.
+2. Optionally open `/` first to show the landing page, then use `/create` for room setup.
+3. Select `Weekend Trip Planning`.
+4. Keep all three agents enabled.
+5. Click `Run Sample`.
 
 ## Narration
 
@@ -24,6 +25,7 @@ The result is a working loop: live group chat, AI participation decisions, human
 ## Capture Checklist
 
 - Show normal chat view.
+- Show the landing page and create-room page.
 - Show agent decision stream.
 - Show router candidate scores, selected Shape, blocked Shapes, and rule adjustments.
 - Show the report's participation decision review for one Shape.
