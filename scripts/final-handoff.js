@@ -10,7 +10,8 @@ function main() {
 
   const demo = latestDemo();
   const targetLoad = readJson(path.join(artifactDir, "target-load-latest.json"));
-  const audit = runFinalAudit();
+  const localAudit = runFinalAudit({ localOnly: true });
+  const finalAudit = runFinalAudit();
   const generatedAt = new Date().toISOString();
 
   fs.writeFileSync(
@@ -39,9 +40,13 @@ function main() {
       "",
       ...targetLoadLines(targetLoad),
       "",
+      "## Local Audit",
+      "",
+      ...auditLines(localAudit),
+      "",
       "## Final Audit",
       "",
-      ...auditLines(audit),
+      ...auditLines(finalAudit),
       "",
       "## Reviewer Path",
       "",
@@ -139,11 +144,13 @@ function auditLines(audit) {
   ];
 }
 
-function runFinalAudit() {
+function runFinalAudit(options = {}) {
+  const env = { ...process.env };
+  if (options.localOnly) env.FINAL_AUDIT_LOCAL_ONLY = "1";
   const result = spawnSync(process.execPath, [path.join(__dirname, "final-audit.js")], {
     cwd: path.join(__dirname, ".."),
     encoding: "utf8",
-    env: process.env,
+    env,
   });
   return parseJson(result.stdout);
 }

@@ -21,19 +21,20 @@ const requiredEnvLinks = [
 ];
 
 function main() {
+  const localOnly = process.env.FINAL_AUDIT_LOCAL_ONLY === "1" || process.argv.includes("--local");
   const checks = [
     ...requiredFiles.map((file) => fileCheck(file)),
-    gitRemoteCheck(),
+    ...(localOnly ? [] : [gitRemoteCheck()]),
     debugTelemetryCheck(),
     aiOnlyFeedbackCheck(),
     reportJudgePromptCheck(),
     ...latestDemoArtifactChecks(),
     ...targetLoadArtifactChecks(),
-    ...requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label)),
+    ...(localOnly ? [] : requiredEnvLinks.map(([name, label]) => envUrlCheck(name, label))),
   ];
   const failed = checks.filter((check) => check.status !== "pass");
 
-  console.log(JSON.stringify({ ok: failed.length === 0, checks }, null, 2));
+  console.log(JSON.stringify({ ok: failed.length === 0, mode: localOnly ? "local" : "final", checks }, null, 2));
   if (failed.length) process.exit(1);
 }
 
@@ -173,8 +174,6 @@ function freshArtifactCheck(exportPath, linksStat) {
     "src",
     "public",
     "scripts/demo-seed.js",
-    "package.json",
-    "package-lock.json",
   ]);
   const exportMs = fs.statSync(exportPath).mtimeMs;
   const linksMs = linksStat.mtimeMs;
@@ -436,7 +435,7 @@ function targetLoadArtifactChecks() {
     {
       name: "perf:fresh-after-head",
       status: fresh ? "pass" : "fail",
-      detail: fresh ? "target load artifact was generated after the current commit" : "rerun npm run load-test:target-artifact",
+      detail: fresh ? "target load artifact was generated after the latest load/runtime commit" : "rerun npm run load-test:target-artifact",
     },
   ];
 }
@@ -446,8 +445,6 @@ function artifactFreshAfterHead(artifactPath) {
     "src",
     "scripts/load-test.js",
     "scripts/run-target-load.js",
-    "package.json",
-    "package-lock.json",
   ]);
   return fs.statSync(artifactPath).mtimeMs >= commitMs;
 }

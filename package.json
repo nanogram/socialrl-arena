@@ -16,6 +16,7 @@
     "demo:seed": "node scripts/demo-seed.js",
     "preflight": "node scripts/preflight.js",
     "final-audit": "node scripts/final-audit.js",
+    "final-audit:local": "FINAL_AUDIT_LOCAL_ONLY=1 node scripts/final-audit.js",
     "final-handoff": "node scripts/final-handoff.js"
   },
   "dependencies": {

@@ -61,6 +61,7 @@ function checkPackageScripts() {
     "demo:seed",
     "preflight",
     "final-audit",
+    "final-audit:local",
     "final-handoff",
   ]) {
     if (!pkg.scripts[script]) throw new Error(`Missing package script: ${script}`);
@@ -98,9 +99,9 @@ function checkSpecMarkers() {
     ["README.md", readme, ["flowchart LR", "Report queue + worker", "Per-stage model routing evidence", "Transcript/report JSON export", "Synthetic WebSocket load test", "Normalized messages, decisions, routing, feedback, reports", "Final Submission Status", "LIVE_DEMO_URL", "GITHUB_REPO_URL", "LOOM_URL"]],
     ["scripts/load-test.js", loadTest, ["lastAiMessageId", "LOAD_TEST_OUTPUT_PATH", "passed"]],
     ["scripts/run-target-load.js", targetLoad, ["SOCIALRL_STORAGE", "target-load-latest.json", "LOAD_TEST_MESSAGES_PER_ROOM"]],
-    ["scripts/final-audit.js", finalAudit, ["aiOnlyFeedbackCheck", "demoScenarioFidelityCheck", "reportJudgePromptCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
-    ["scripts/final-handoff.js", finalHandoff, ["SocialRL Arena Final Handoff", "Target Load Evidence", "Final Audit", "Reviewer Path"]],
-    ["package.json", pkg, ["load-test:target-artifact", "final-handoff"]],
+    ["scripts/final-audit.js", finalAudit, ["FINAL_AUDIT_LOCAL_ONLY", "mode: localOnly", "aiOnlyFeedbackCheck", "demoScenarioFidelityCheck", "reportJudgePromptCheck", "targetLoadArtifactChecks", "perf:target-load-artifact"]],
+    ["scripts/final-handoff.js", finalHandoff, ["SocialRL Arena Final Handoff", "Target Load Evidence", "Local Audit", "Final Audit", "Reviewer Path"]],
+    ["package.json", pkg, ["load-test:target-artifact", "final-audit:local", "final-handoff"]],
   ]) {
     for (const marker of markers) {
       if (!body.includes(marker)) throw new Error(`${file} missing spec marker: ${marker}`);

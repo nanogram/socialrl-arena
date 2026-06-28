@@ -29,6 +29,7 @@ npm run load-test:target
 npm run load-test:target-artifact
 npm run demo:seed
 npm run preflight
+npm run final-audit:local
 npm run final-audit
 npm run final-handoff
 ```
@@ -205,10 +206,11 @@ Local implementation is complete against the saved spec and is checked by:
 npm run preflight
 npm run load-test:smoke
 npm run load-test:target-artifact
+npm run final-audit:local
 npm run final-handoff
 ```
 
-`npm run final-audit` validates the local package plus the final external links. The remaining submission-only items are:
+`npm run final-audit:local` validates the local package without external links. `npm run final-audit` validates the local package plus the final external links. The remaining submission-only items are:
 
 - Add a GitHub `origin` remote and push this repository.
 - Deploy the app to a public URL.

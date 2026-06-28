@@ -33,6 +33,7 @@ Run final local verification:
 npm run preflight
 npm run load-test:smoke
 npm run load-test:target-artifact
+npm run final-audit:local
 npm run final-handoff
 ```
 
