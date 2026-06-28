@@ -804,6 +804,7 @@ function renderReportPage() {
       </article>
       ${renderSystemPerformance(report.systemPerformance)}
       ${renderModelRoutingSummary(report.modelRoutingSummary)}
+      ${renderEvidenceManifest(report.evidenceManifest)}
       ${report.agents.map(renderExpandedAgentReport).join("")}
       ${renderComparison(report)}
       ${renderRunArchive(room)}
@@ -1268,6 +1269,7 @@ function renderReport() {
       ${renderSessionFeedback(report.sessionFeedbackSummary)}
     </article>
     ${renderModelRoutingSummary(report.modelRoutingSummary)}
+    ${renderEvidenceManifest(report.evidenceManifest)}
     ${report.agents.map(renderAgentReport).join("")}
     ${renderComparison(report)}
     ${renderRunArchive(room)}
@@ -1287,6 +1289,44 @@ function renderSessionFeedback(summary) {
       ${metric("Talked more", summary.humansTalkedMoreOrLess.more || 0)}
       ${metric("Route votes", sumObjectValues(summary.routeNextAgentCounts))}
     </div>
+  `;
+}
+
+function renderEvidenceManifest(manifest = {}) {
+  const transcript = manifest.transcript || {};
+  const decisions = manifest.decisions || {};
+  const feedback = manifest.feedback || {};
+  const latency = manifest.latency || {};
+  const archive = manifest.archive || {};
+  const agentConfigs = Array.isArray(manifest.agentConfigs) ? manifest.agentConfigs : [];
+  if (!transcript.messages && !decisions.agentDecisions && !agentConfigs.length) return "";
+
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Eval Inputs</strong></div>
+      <div class="metric-grid">
+        ${metric("Transcript", transcript.messages || 0)}
+        ${metric("Human", transcript.humanMessages || 0)}
+        ${metric("AI", transcript.aiMessages || 0)}
+        ${metric("Replies", transcript.replyLinks || 0)}
+        ${metric("Decisions", decisions.agentDecisions || 0)}
+        ${metric("Routes", decisions.routingDecisions || 0)}
+        ${metric("Feedback", feedback.messageFeedback || 0)}
+        ${metric("Session feedback", feedback.sessionFeedback || 0)}
+        ${metric("Latency samples", latency.responseLatencySamples || 0)}
+        ${metric("Token samples", latency.tokenCountSamples || 0)}
+        ${metric("Agent configs", agentConfigs.length)}
+        ${metric("Archived runs", archive.runSnapshots || 0)}
+      </div>
+      <div class="tag-list">
+        ${agentConfigs
+          .map(
+            (agent) =>
+              `<span class="tag">${escapeHtml(agent.name || agent.agentId)} · ${escapeHtml(agent.promptVersion || "prompt")} · ${escapeHtml(agent.policyVersion || "policy")}</span>`,
+          )
+          .join("")}
+      </div>
+    </article>
   `;
 }
 

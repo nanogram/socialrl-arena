@@ -154,6 +154,7 @@ create table if not exists room_reports (
   room_stats jsonb not null,
   session_feedback_summary jsonb not null,
   model_routing_summary jsonb not null default '{}',
+  evidence_manifest jsonb not null default '{}',
   system_performance jsonb not null,
   comparison jsonb not null,
   created_at timestamptz not null
@@ -179,3 +180,4 @@ alter table messages add column if not exists first_token_latency_ms integer;
 alter table agent_decisions add column if not exists model_routing jsonb not null default '{}';
 alter table routing_decisions add column if not exists model_routing jsonb not null default '{}';
 alter table room_reports add column if not exists model_routing_summary jsonb not null default '{}';
+alter table room_reports add column if not exists evidence_manifest jsonb not null default '{}';

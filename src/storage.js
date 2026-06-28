@@ -473,9 +473,10 @@ async function insertReports(client, reports) {
       `
         insert into room_reports (
           id, room_id, session_number, policy_mode, summary, room_stats,
-          session_feedback_summary, model_routing_summary, system_performance, comparison, created_at
+          session_feedback_summary, model_routing_summary, evidence_manifest,
+          system_performance, comparison, created_at
         )
-        values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11)
+        values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12)
       `,
       [
         report.id,
@@ -486,6 +487,7 @@ async function insertReports(client, reports) {
         JSON.stringify(report.roomStats),
         JSON.stringify(report.sessionFeedbackSummary),
         JSON.stringify(report.modelRoutingSummary || {}),
+        JSON.stringify(report.evidenceManifest || {}),
         JSON.stringify(report.systemPerformance),
         JSON.stringify(report.comparison || []),
         report.createdAt,

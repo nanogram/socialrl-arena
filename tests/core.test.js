@@ -160,6 +160,12 @@ assert.equal(report.sessionFeedbackSummary.totalResponses, 1);
 assert.equal(report.sessionFeedbackSummary.routeNextAgentCounts.observer_v1, 1);
 assert.equal(report.modelRoutingSummary.latestPlan.decision.tier, "fast");
 assert.equal(report.modelRoutingSummary.latestPlan.report.tier, "strong");
+assert.equal(report.evidenceManifest.scenario.roomType, room.scenario.roomType);
+assert.equal(report.evidenceManifest.transcript.messages, room.messages.length);
+assert.equal(report.evidenceManifest.decisions.agentDecisions, room.decisions.length);
+assert.equal(report.evidenceManifest.feedback.messageFeedback, room.feedback.length);
+assert.equal(report.evidenceManifest.agentConfigs.length, 3);
+assert.ok(report.evidenceManifest.latency.responseLatencySamples >= 0);
 assert.equal(observerReport.routingRecommendation.sessionFeedback.routeNextVotes, 1);
 assert.ok(observerReport.routingRecommendation.routeNextTime);
 assert.ok(observerReport.routingRecommendation.reason.includes("session feedback"));
@@ -303,6 +309,7 @@ addSessionFeedback(
 
 const improvedReport = buildReport(room);
 assert.equal(improvedReport.policyMode, "improved");
+assert.ok(improvedReport.evidenceManifest.archive.runSnapshots >= 1);
 assert.ok(Array.isArray(improvedReport.comparison));
 assert.ok(improvedReport.comparison.every((item) => item.baseline && item.improved));
 assert.ok(

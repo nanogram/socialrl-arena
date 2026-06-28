@@ -156,6 +156,7 @@ function demoReportCheck(exported) {
   const latestReport = latest(room.reports) || {};
   const performance = latestReport.systemPerformance || {};
   const modelRouting = latestReport.modelRoutingSummary || {};
+  const evidence = latestReport.evidenceManifest || {};
   const latestPlan = modelRouting.latestPlan || {};
   const agentReports = Array.isArray(latestReport.agents) ? latestReport.agents : [];
   const ok =
@@ -171,6 +172,18 @@ function demoReportCheck(exported) {
     latestPlan.router.tier === "fast" &&
     latestPlan.report &&
     latestPlan.report.tier === "strong" &&
+    evidence.scenario &&
+    evidence.scenario.roomType &&
+    evidence.transcript &&
+    evidence.transcript.messages > 0 &&
+    evidence.decisions &&
+    evidence.decisions.agentDecisions > 0 &&
+    evidence.feedback &&
+    evidence.feedback.messageFeedback >= 0 &&
+    evidence.latency &&
+    evidence.latency.responseLatencySamples >= 0 &&
+    Array.isArray(evidence.agentConfigs) &&
+    evidence.agentConfigs.length >= 2 &&
     Array.isArray(room.routingDecisions) &&
     room.routingDecisions.every((decision) => decision.modelRouting && decision.modelRouting.decision) &&
     agentReports.every(
@@ -196,8 +209,8 @@ function demoReportCheck(exported) {
     name: "demo:report-contract",
     status: ok ? "pass" : "fail",
     detail: ok
-      ? `${agentReports.length} agent reports include routing, performance, model-routing, and decision-review evidence`
-      : "latest report missing agent selection rules, model routing, targeting stats, decision review, routing feedback, routing scores, or system performance fields",
+      ? `${agentReports.length} agent reports include routing, performance, model-routing, eval-input, and decision-review evidence`
+      : "latest report missing agent selection rules, model routing, eval-input manifest, targeting stats, decision review, routing feedback, routing scores, or system performance fields",
   };
 }
 

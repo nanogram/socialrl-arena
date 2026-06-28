@@ -122,6 +122,7 @@ docker compose exec app npm run migrate:postgres
 - Reply-targeting, target-user, wrong-person, and quiet-participant targeting stats in agent reports
 - Per-agent participation decision review showing recent speak/wait/stay-silent reasons, trigger messages, router selection, and feedback outcome
 - Routing recommendations include session feedback route-next/useful/annoying vote evidence
+- Report evidence manifest summarizes transcript, decisions, feedback, latency, agent config, scenario, and run archive inputs
 - Report-generated policy diffs carried into the improved-policy rerun
 - Side-by-side before/after comparison with baseline and improved metrics
 - Run Archive card on reports summarizes baseline/current run transcripts, decisions, feedback, and reports

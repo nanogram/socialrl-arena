@@ -1233,6 +1233,7 @@ function buildReport(room, options = {}) {
     roomStats: buildRoomStats(room),
     sessionFeedbackSummary: summarizeSessionFeedback(room),
     modelRoutingSummary: buildModelRoutingSummary(room),
+    evidenceManifest: buildEvidenceManifest(room),
     systemPerformance: buildSystemPerformance(room, options.systemContext),
     agents: agentReports,
     comparison: previousReport ? compareReports(previousReport, agentReports) : [],
@@ -1712,6 +1713,72 @@ function buildModelRoutingSummary(room) {
     fastDecisionRoutes: plans.filter((plan) => plan.decision && plan.decision.tier === "fast").length,
     reportTier: latestPlan.report.tier,
     policyTier: latestPlan.policy.tier,
+  };
+}
+
+function buildEvidenceManifest(room) {
+  const messages = room.messages || [];
+  const humanMessages = messages.filter((message) => message.senderType === "human");
+  const aiMessages = messages.filter((message) => message.senderType === "ai");
+  const decisions = room.decisions || [];
+  const routingDecisions = room.routingDecisions || [];
+  const feedback = room.feedback || [];
+  const sessionFeedback = room.sessionFeedback || [];
+  const runHistory = room.runHistory || [];
+
+  return {
+    scenario: {
+      id: room.scenario.id,
+      title: room.scenario.title,
+      roomType: room.scenario.roomType,
+    },
+    transcript: {
+      messages: messages.length,
+      humanMessages: humanMessages.length,
+      aiMessages: aiMessages.length,
+      replyLinks: messages.filter((message) => message.replyToMessageId).length,
+      aiMessagesWithDecisionId: aiMessages.filter((message) => message.decisionId).length,
+      aiMessagesWithModelMetadata: aiMessages.filter(
+        (message) => message.modelName && message.promptVersion && message.policyVersion,
+      ).length,
+    },
+    decisions: {
+      agentDecisions: decisions.length,
+      speak: decisions.filter((decision) => decision.decision === "speak").length,
+      wait: decisions.filter((decision) => decision.decision === "wait").length,
+      staySilent: decisions.filter((decision) => decision.decision === "stay_silent").length,
+      targetUsers: decisions.filter((decision) => decision.targetUser).length,
+      routingDecisions: routingDecisions.length,
+    },
+    feedback: {
+      messageFeedback: feedback.length,
+      sessionFeedback: sessionFeedback.length,
+      tagCounts: countBy(feedback, "tag"),
+    },
+    latency: {
+      responseLatencySamples: aiMessages.filter((message) => Number.isFinite(message.latencyMs)).length,
+      firstTokenLatencySamples: aiMessages.filter((message) => Number.isFinite(message.firstTokenLatencyMs)).length,
+      tokenCountSamples: aiMessages.filter((message) => Number.isFinite(message.tokenCount)).length,
+    },
+    agentConfigs: getRoomAgents(room).map((agent) => ({
+      agentId: agent.id,
+      name: agent.name,
+      role: agent.role,
+      modelName: agent.modelName,
+      promptVersion: agent.promptVersion,
+      policyVersion: effectiveAgentPolicyVersion(agent, room),
+    })),
+    archive: {
+      runSnapshots: runHistory.length,
+      archivedMessages: runHistory.reduce(
+        (total, run) => total + (Array.isArray(run.messages) ? run.messages.length : 0),
+        0,
+      ),
+      archivedReports: runHistory.reduce(
+        (total, run) => total + (Array.isArray(run.reports) ? run.reports.length : 0),
+        0,
+      ),
+    },
   };
 }
 

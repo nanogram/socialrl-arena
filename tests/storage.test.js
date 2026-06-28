@@ -153,8 +153,12 @@ async function main() {
   );
   assert.ok(roomReportWrite);
   assert.ok(roomReportWrite.sql.includes("model_routing_summary"));
+  assert.ok(roomReportWrite.sql.includes("evidence_manifest"));
   const persistedModelRoutingSummary = JSON.parse(roomReportWrite.params[7]);
   assert.equal(persistedModelRoutingSummary.latestPlan.report.tier, "strong");
+  const persistedEvidenceManifest = JSON.parse(roomReportWrite.params[8]);
+  assert.equal(persistedEvidenceManifest.transcript.messages, room.messages.length);
+  assert.equal(persistedEvidenceManifest.agentConfigs.length, 2);
   const agentReportWrite = fakeClient.queries.find((entry) =>
     entry.sql.startsWith("insert into agent_reports"),
   );
