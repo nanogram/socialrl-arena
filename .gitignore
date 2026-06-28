@@ -3,4 +3,5 @@ data/
 demo-artifacts/
 .env
 .env.*
+!.env.example
 npm-debug.log*
