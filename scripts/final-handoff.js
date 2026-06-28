@@ -118,7 +118,8 @@ function targetLoadLines(result) {
     `- Reports ready: ${result.reportsReady}`,
     `- Socket errors: ${result.unexpectedSocketCloses || 0} unexpected closes, ${result.errors || 0} load-test errors`,
     `- Throughput: ${result.messageThroughputPerSecond} messages/sec, ${result.reportThroughputPerSecond} reports/sec`,
-    `- p95 ack/first-token/report: ${result.p95MessageAckMs} ms / ${result.p95FirstTokenLatencyMs} ms / ${result.p95ReportLatencyMs} ms`,
+    `- p95 fanout/first-token/report: ${result.p95MessageFanoutMs} ms / ${result.p95FirstTokenLatencyMs} ms / ${result.p95ReportLatencyMs} ms`,
+    `- p99 fanout/first-token/report: ${result.p99MessageFanoutMs} ms / ${result.p99FirstTokenLatencyMs} ms / ${result.p99ReportLatencyMs} ms`,
     "- Local artifact: demo-artifacts/target-load-latest.json",
   ];
 }

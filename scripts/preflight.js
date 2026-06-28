@@ -153,7 +153,12 @@ function checkPerformanceReport() {
     '"firstTokenSamples":',
     '"feedbackSamples": 100',
     '"p95FirstTokenLatencyMs"',
+    '"p99FirstTokenLatencyMs"',
+    '"p95MessageFanoutMs"',
+    '"p99MessageFanoutMs"',
     '"p95FeedbackAckMs"',
+    '"p99FeedbackAckMs"',
+    '"p99ReportLatencyMs"',
     '"reportThroughputPerSecond"',
   ]) {
     if (!report.includes(needle)) throw new Error(`Performance report missing: ${needle}`);

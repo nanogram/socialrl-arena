@@ -169,14 +169,20 @@ function latestDemoArtifactChecks() {
 }
 
 function freshArtifactCheck(exportPath, linksStat) {
-  const commitMs = Number(execFileSync("git", ["log", "-1", "--format=%ct"], { encoding: "utf8" }).trim()) * 1000;
+  const commitMs = latestCommitMsFor([
+    "src",
+    "public",
+    "scripts/demo-seed.js",
+    "package.json",
+    "package-lock.json",
+  ]);
   const exportMs = fs.statSync(exportPath).mtimeMs;
   const linksMs = linksStat.mtimeMs;
   const fresh = exportMs >= commitMs && linksMs >= commitMs;
   return {
     name: "demo:fresh-after-head",
     status: fresh ? "pass" : "fail",
-    detail: fresh ? "latest demo was generated after the current commit" : "rerun npm run demo:seed",
+    detail: fresh ? "latest demo was generated after the latest demo/runtime commit" : "rerun npm run demo:seed",
   };
 }
 
@@ -406,18 +412,26 @@ function targetLoadArtifactChecks() {
     result.errors === 0 &&
     result.firstTokenSamples > 0 &&
     result.feedbackSamples >= result.roomCount &&
+    result.messageFanoutSamples >= result.messagesSent &&
+    Number.isFinite(result.p50MessageFanoutMs) &&
+    Number.isFinite(result.p95MessageFanoutMs) &&
+    Number.isFinite(result.p99MessageFanoutMs) &&
     Number.isFinite(result.p95MessageAckMs) &&
+    Number.isFinite(result.p99MessageAckMs) &&
     Number.isFinite(result.p95FirstTokenLatencyMs) &&
+    Number.isFinite(result.p99FirstTokenLatencyMs) &&
     Number.isFinite(result.p95FeedbackAckMs) &&
-    Number.isFinite(result.p95ReportLatencyMs);
+    Number.isFinite(result.p99FeedbackAckMs) &&
+    Number.isFinite(result.p95ReportLatencyMs) &&
+    Number.isFinite(result.p99ReportLatencyMs);
 
   return [
     {
       name: "perf:target-load-artifact",
       status: ok ? "pass" : "fail",
       detail: ok
-        ? `${result.roomCount} rooms, ${result.messagesSent} messages, ${result.socketsOpened} sockets, ${result.reportsReady} reports`
-        : "target load artifact does not prove 100 rooms, 300 users, 300 AI agents, 1000 messages, reports, first-token, feedback, and clean socket closure",
+        ? `${result.roomCount} rooms, ${result.messagesSent} messages, ${result.socketsOpened} sockets, ${result.reportsReady} reports, p99 fanout ${result.p99MessageFanoutMs} ms`
+        : "target load artifact does not prove 100 rooms, 300 users, 300 AI agents, 1000 messages, full fanout p50/p95/p99, p99 first-token/feedback/report latencies, reports, feedback, and clean socket closure",
     },
     {
       name: "perf:fresh-after-head",
@@ -428,8 +442,27 @@ function targetLoadArtifactChecks() {
 }
 
 function artifactFreshAfterHead(artifactPath) {
-  const commitMs = Number(execFileSync("git", ["log", "-1", "--format=%ct"], { encoding: "utf8" }).trim()) * 1000;
+  const commitMs = latestCommitMsFor([
+    "src",
+    "scripts/load-test.js",
+    "scripts/run-target-load.js",
+    "package.json",
+    "package-lock.json",
+  ]);
   return fs.statSync(artifactPath).mtimeMs >= commitMs;
+}
+
+function latestCommitMsFor(paths) {
+  try {
+    const output = execFileSync("git", ["log", "-1", "--format=%ct", "--", ...paths], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    if (output) return Number(output) * 1000;
+  } catch (error) {
+    // Fall through to HEAD-level freshness when path-specific history is unavailable.
+  }
+  return Number(execFileSync("git", ["log", "-1", "--format=%ct"], { encoding: "utf8" }).trim()) * 1000;
 }
 
 function latest(items) {

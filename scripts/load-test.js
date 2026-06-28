@@ -30,6 +30,7 @@ async function main() {
     messageAckLatencies: [],
     firstTokenLatencies: [],
     feedbackAckLatencies: [],
+    messageFanoutLatencies: [],
     reportLatencies: [],
   };
 
@@ -64,14 +65,22 @@ async function main() {
     reportThroughputPerSecond: round(metrics.reportRooms.size / Math.max(1, elapsedMs / 1000)),
     firstTokenSamples: metrics.firstTokenLatencies.length,
     feedbackSamples: metrics.feedbackAckLatencies.length,
+    messageFanoutSamples: metrics.messageFanoutLatencies.length,
+    p50MessageFanoutMs: percentile(metrics.messageFanoutLatencies, 0.5),
+    p95MessageFanoutMs: percentile(metrics.messageFanoutLatencies, 0.95),
+    p99MessageFanoutMs: percentile(metrics.messageFanoutLatencies, 0.99),
     p50MessageAckMs: percentile(metrics.messageAckLatencies, 0.5),
     p95MessageAckMs: percentile(metrics.messageAckLatencies, 0.95),
+    p99MessageAckMs: percentile(metrics.messageAckLatencies, 0.99),
     p50FirstTokenLatencyMs: percentile(metrics.firstTokenLatencies, 0.5),
     p95FirstTokenLatencyMs: percentile(metrics.firstTokenLatencies, 0.95),
+    p99FirstTokenLatencyMs: percentile(metrics.firstTokenLatencies, 0.99),
     p50FeedbackAckMs: percentile(metrics.feedbackAckLatencies, 0.5),
     p95FeedbackAckMs: percentile(metrics.feedbackAckLatencies, 0.95),
+    p99FeedbackAckMs: percentile(metrics.feedbackAckLatencies, 0.99),
     p50ReportLatencyMs: percentile(metrics.reportLatencies, 0.5),
     p95ReportLatencyMs: percentile(metrics.reportLatencies, 0.95),
+    p99ReportLatencyMs: percentile(metrics.reportLatencies, 0.99),
     passed: !failed,
   };
 
@@ -89,6 +98,11 @@ async function exerciseRoom(roomId, metrics) {
   const sockets = await Promise.all(
     Array.from({ length: usersPerRoom }, (_, index) => connectUser(roomId, `User ${index + 1}`, metrics)),
   );
+  const roomTracker = { sockets, pendingFanouts: [] };
+  sockets.forEach((socket, index) => {
+    socket.roomTracker = roomTracker;
+    socket.socketIndex = index;
+  });
 
   sockets[0].send({
     type: "create_room",
@@ -103,6 +117,15 @@ async function exerciseRoom(roomId, metrics) {
     const socket = sockets[index % sockets.length];
     const displayName = `User ${(index % usersPerRoom) + 1}`;
     const content = sampleMessage(index);
+    const pendingFanout = {
+      senderName: displayName,
+      content,
+      sentAt: Date.now(),
+      messageId: null,
+      seenSockets: new Set(),
+      done: false,
+    };
+    roomTracker.pendingFanouts.push(pendingFanout);
     socket.pendingMessageSentAt = Date.now();
     socket.pendingMessageContent = content;
     socket.pendingMessageSender = displayName;
@@ -113,6 +136,7 @@ async function exerciseRoom(roomId, metrics) {
     });
     metrics.messagesSent += 1;
     await waitFor(() => !socket.pendingMessageSentAt, 5000);
+    await waitFor(() => pendingFanout.done, 5000);
 
     await wait(interMessageDelayMs);
   }
@@ -175,6 +199,8 @@ class JsonSocket {
     this.pendingFeedbackSentAt = null;
     this.pendingFeedbackMessageId = null;
     this.pendingReportSentAt = null;
+    this.roomTracker = null;
+    this.socketIndex = -1;
     this.onOpen = null;
     this.onError = null;
 
@@ -218,6 +244,9 @@ class JsonSocket {
       this.pendingMessageContent = null;
       this.pendingMessageSender = null;
     }
+    if (event.type === "message_created" && event.message && event.message.senderType === "human") {
+      this.recordFanout(event.message);
+    }
     if (
       event.type === "feedback_added" &&
       this.pendingFeedbackSentAt &&
@@ -257,6 +286,23 @@ class JsonSocket {
     if (event.type === "error") {
       this.metrics.errors += 1;
     }
+  }
+
+  recordFanout(message) {
+    if (!this.roomTracker) return;
+    const pending = this.roomTracker.pendingFanouts.find(
+      (item) =>
+        !item.done &&
+        item.senderName === message.senderName &&
+        item.content === message.content &&
+        (!item.messageId || item.messageId === message.id),
+    );
+    if (!pending) return;
+    pending.messageId = message.id;
+    pending.seenSockets.add(this.socketIndex);
+    if (pending.seenSockets.size !== this.roomTracker.sockets.length) return;
+    pending.done = true;
+    this.metrics.messageFanoutLatencies.push(Date.now() - pending.sentAt);
   }
 }
 
