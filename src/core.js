@@ -879,11 +879,23 @@ function addSessionFeedback(room, input = {}, userId = "demo_user") {
   return feedback;
 }
 
-function buildReport(room) {
+function buildReport(room, options = {}) {
+  const replaceLatest = Boolean(options.replaceLatest);
+  const replacementIndex = replaceLatest ? room.reports.length - 1 : -1;
+  const reportId =
+    replaceLatest && replacementIndex >= 0 && room.reports[replacementIndex]
+      ? room.reports[replacementIndex].id
+      : randomUUID();
   const agentReports = getRoomAgents(room).map((agent) => buildAgentReport(room, agent));
-  const previousReport = room.reports[room.reports.length - 1] || null;
+  const previousReport =
+    replaceLatest && replacementIndex >= 0
+      ? room.reports
+          .slice(0, replacementIndex)
+          .reverse()
+          .find((candidate) => candidate.sessionNumber !== room.sessionNumber || candidate.policyMode !== room.policyMode) || null
+      : room.reports[room.reports.length - 1] || null;
   const report = {
-    id: randomUUID(),
+    id: reportId,
     roomId: room.id,
     scenarioId: room.scenario.id,
     scenarioTitle: room.scenario.title,
@@ -900,8 +912,17 @@ function buildReport(room) {
   };
   room.status = "ended";
   room.endedAt = new Date().toISOString();
-  room.reports.push(report);
+  if (replaceLatest && replacementIndex >= 0) {
+    room.reports[replacementIndex] = report;
+  } else {
+    room.reports.push(report);
+  }
   return report;
+}
+
+function refreshLatestReport(room) {
+  if (!room.reports.length) return buildReport(room);
+  return buildReport(room, { replaceLatest: true });
 }
 
 function buildAgentReport(room, agent) {
@@ -1638,6 +1659,7 @@ module.exports = {
   getRoomAgents,
   getScenario,
   hydrateRoom,
+  refreshLatestReport,
   recordRoutedDecisions,
   resetRoomForNextRun,
   routeAgentDecisions,

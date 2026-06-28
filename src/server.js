@@ -17,6 +17,7 @@ const {
   finalizeAgentMessage,
   generateAgentReply,
   recordRoutedDecisions,
+  refreshLatestReport,
   resetRoomForNextRun,
   serializeRoom,
   setRoomConfig,
@@ -224,6 +225,10 @@ async function handleClientEvent(ws, event) {
       ws.id,
     );
     broadcastRoom(room.id, "session_feedback_added", sessionFeedbackEventPayload(feedback));
+    if (room.status === "ended" && room.reports.length) {
+      const job = enqueueReport(room, "session_feedback_refresh");
+      broadcastRoom(room.id, "report_queued", reportJobEventPayload(room, job));
+    }
     await persistRoom(room);
     broadcastRoom(room.id, "state_snapshot", snapshot(room.id));
     return;
@@ -756,7 +761,10 @@ function runReportWorker() {
 
       try {
         await delay(25);
-        const draftReport = buildReport(room);
+        const draftReport =
+          job.source === "session_feedback_refresh" && room.reports.length
+            ? refreshLatestReport(room)
+            : buildReport(room);
         const judgedReport = await llmProvider.judgeReport({
           room,
           draftReport,

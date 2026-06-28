@@ -12,6 +12,7 @@ const {
   generateAgentReply,
   getRoomAgents,
   createAgentDecisions,
+  refreshLatestReport,
   resetRoomForNextRun,
   routeAgentDecisions,
   setRoomConfig,
@@ -123,6 +124,24 @@ assert.ok(mediatorReport.routingScores.planningScore >= 0);
 assert.ok("p99FullResponseLatencyMs" in report.systemPerformance);
 assert.ok("maxReportQueueDepth" in report.systemPerformance);
 assert.ok(report.systemPerformance.reportGeneratedLocally);
+
+addSessionFeedback(
+  room,
+  {
+    mostUsefulAgentId: "observer_v1",
+    routeNextAgentId: "mediator_v1",
+    didReachDecision: true,
+    wouldInviteAgain: true,
+    humansTalkedMoreOrLess: "more",
+    freeformNotes: "Late normal-mode feedback should refresh the report.",
+  },
+  "late_feedback_user",
+);
+const refreshedReport = refreshLatestReport(room);
+assert.equal(room.reports.length, 1);
+assert.equal(refreshedReport.id, report.id);
+assert.equal(refreshedReport.sessionFeedbackSummary.totalResponses, 2);
+assert.equal(refreshedReport.sessionFeedbackSummary.routeNextAgentCounts.mediator_v1, 1);
 
 room.policyMode = "improved";
 room.sessionNumber += 1;
