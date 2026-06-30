@@ -9,12 +9,12 @@ The product loop is:
 1. Create a room and select a scenario.
 2. Join with a display name and add AI agents with distinct roles: Mediator, Vibe Friend, and Observer.
 3. Run a realtime group chat with streamed AI responses.
-4. Let humans tag AI messages with social feedback.
+4. Infer AI message reception from follow-up mood, replies, momentum, and memory use.
 5. End the session and generate an Agent Performance Report.
 6. Apply the generated improved policy.
 7. Rerun the scenario and compare baseline vs improved behavior.
 
-The feedback model is group-chat-native. It captures common message quality labels plus whether the agent helped the group decide, interrupted humans, had good timing, should have stayed quiet, reduced tension, made the chat fun, missed social tension, responded to the wrong person, became too generic, or ignored a quieter participant. Reply-to metadata preserves which message a human or AI response targeted, and reports quantify reply-targeting rate, target-user counts, wrong-person feedback, and quiet-participant targeting so reviewers can evaluate whether the agent understood who was talking to whom. Session feedback also records which agent users would route into this type of room next time.
+The reception model is group-chat-native. It automatically classifies whether AI messages helped or hurt by looking at follow-up mood, replies, momentum, memory use, and any optional reviewer labels. It captures common quality signals plus whether the agent helped the group decide, interrupted humans, had good timing, should have stayed quiet, reduced tension, made the chat fun, missed social tension, responded to the wrong person, became too generic, or ignored a quieter participant. Reply-to metadata preserves which message a human or AI response targeted, and reports quantify reply-targeting rate, target-user counts, wrong-person feedback, and quiet-participant targeting so reviewers can evaluate whether the agent understood who was talking to whom. Session feedback also records which agent users would route into this type of room next time.
 
 Agent Performance Reports score each agent on helpfulness, timing, brevity, personality consistency, social awareness, group momentum, decision impact, human-likeness, fun, and restraint. Reports include a participation decision review that ties recent speak, wait, and stay-silent decisions back to trigger messages, target users, router selection, rule adjustments, and feedback outcomes. They also include best and worst messages, failure modes, policy diffs, routing recommendations, targeting metrics, human momentum lift/direction, routing success and suitability scores, session feedback summaries, system performance metrics, and an evidence manifest covering transcript, decisions, feedback, latency samples, agent config, scenario metadata, and archived before/after runs.
 

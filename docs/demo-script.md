@@ -34,7 +34,7 @@ The result is a working loop: live group chat, AI participation decisions, human
 - Show router candidate scores, selected agent, blocked agents, and rule adjustments.
 - Show the model-routing card in the report.
 - Show the report's participation decision review for one agent.
-- Add at least two feedback tags.
+- Show inferred message reception and, if useful, add an optional reviewer label.
 - End session and show Agent Report.
 - Click `Apply Improved`, run sample again, and show before/after comparison.
 - Export JSON to show transcript/report portability, including archived baseline and improved run snapshots plus sender, latency, token, model, prompt, and policy metadata.

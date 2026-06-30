@@ -5,7 +5,7 @@ SocialRL Arena is a realtime group-chat eval demo. The first slice proves the co
 1. Humans send messages in a shared room.
 2. AI agents decide whether to speak, wait, or stay silent.
 3. AI responses stream into the room.
-4. Humans tag AI messages with group-chat-native feedback.
+4. The system infers AI message reception from follow-up mood, replies, momentum, and memory use.
 5. Ending the session generates Agent Performance Reports.
 6. The report produces improved participation policies and before/after comparison data.
 
