@@ -474,9 +474,9 @@ async function insertReports(client, reports) {
         insert into room_reports (
           id, room_id, session_number, policy_mode, summary, room_stats,
           session_feedback_summary, model_routing_summary, evidence_manifest,
-          system_performance, comparison, created_at
+          room_memory_ledger, room_mood_timeline, system_performance, comparison, created_at
         )
-        values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12)
+        values ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb, $14)
       `,
       [
         report.id,
@@ -488,6 +488,8 @@ async function insertReports(client, reports) {
         JSON.stringify(report.sessionFeedbackSummary),
         JSON.stringify(report.modelRoutingSummary || {}),
         JSON.stringify(report.evidenceManifest || {}),
+        JSON.stringify(report.roomMemoryLedger || {}),
+        JSON.stringify(report.roomMoodTimeline || {}),
         JSON.stringify(report.systemPerformance),
         JSON.stringify(report.comparison || []),
         report.createdAt,
@@ -499,10 +501,10 @@ async function insertReports(client, reports) {
         `
           insert into agent_reports (
             id, room_id, agent_id, session_number, policy_mode, summary, scorecard,
-            stats, decision_review, failure_modes, best_messages, worst_messages, routing_scores,
+            stats, decision_review, social_intelligence_review, automatic_reception, failure_modes, best_messages, worst_messages, routing_scores,
             policy_diff, routing_recommendation, created_at
           )
-          values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16)
+          values ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16::jsonb, $17::jsonb, $18)
         `,
         [
           `${report.id}:${agentReport.agentId}`,
@@ -514,6 +516,8 @@ async function insertReports(client, reports) {
           JSON.stringify(agentReport.scorecard),
           JSON.stringify(agentReport.stats),
           JSON.stringify(agentReport.decisionReview || {}),
+          JSON.stringify(agentReport.socialIntelligenceReview || {}),
+          JSON.stringify(agentReport.automaticReception || []),
           JSON.stringify(agentReport.failureModes),
           JSON.stringify(agentReport.bestMessages),
           JSON.stringify(agentReport.worstMessages),

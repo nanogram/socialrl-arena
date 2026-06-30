@@ -136,6 +136,8 @@ create table if not exists agent_reports (
   scorecard jsonb not null,
   stats jsonb not null,
   decision_review jsonb not null default '{}',
+  social_intelligence_review jsonb not null default '{}',
+  automatic_reception jsonb not null default '[]',
   failure_modes jsonb not null,
   best_messages jsonb not null,
   worst_messages jsonb not null,
@@ -155,6 +157,8 @@ create table if not exists room_reports (
   session_feedback_summary jsonb not null,
   model_routing_summary jsonb not null default '{}',
   evidence_manifest jsonb not null default '{}',
+  room_memory_ledger jsonb not null default '{}',
+  room_mood_timeline jsonb not null default '{}',
   system_performance jsonb not null,
   comparison jsonb not null,
   created_at timestamptz not null
@@ -176,8 +180,12 @@ create index if not exists idx_agent_reports_room on agent_reports(room_id, sess
 alter table session_feedback add column if not exists route_next_agent_id text;
 alter table agent_reports add column if not exists routing_scores jsonb not null default '{}';
 alter table agent_reports add column if not exists decision_review jsonb not null default '{}';
+alter table agent_reports add column if not exists social_intelligence_review jsonb not null default '{}';
+alter table agent_reports add column if not exists automatic_reception jsonb not null default '[]';
 alter table messages add column if not exists first_token_latency_ms integer;
 alter table agent_decisions add column if not exists model_routing jsonb not null default '{}';
 alter table routing_decisions add column if not exists model_routing jsonb not null default '{}';
 alter table room_reports add column if not exists model_routing_summary jsonb not null default '{}';
 alter table room_reports add column if not exists evidence_manifest jsonb not null default '{}';
+alter table room_reports add column if not exists room_memory_ledger jsonb not null default '{}';
+alter table room_reports add column if not exists room_mood_timeline jsonb not null default '{}';

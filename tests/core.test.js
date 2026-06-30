@@ -146,6 +146,8 @@ addFeedback(room, aiMessages[0].id, "too_verbose", "test_user");
 addFeedback(room, aiMessages[0].id, "should_have_stayed_quiet", "test_user");
 addFeedback(room, aiMessages[0].id, "too_assistant_like", "test_user");
 addFeedback(room, aiMessages[0].id, "responded_wrong_person", "test_user");
+addFeedback(room, aiMessages[0].id, "memory_miss", "test_user");
+addFeedback(room, aiMessages[0].id, "good_restraint", "test_user");
 addSessionFeedback(
   room,
   {
@@ -177,6 +179,14 @@ assert.equal(report.evidenceManifest.decisions.agentDecisions, room.decisions.le
 assert.equal(report.evidenceManifest.feedback.messageFeedback, room.feedback.length);
 assert.equal(report.evidenceManifest.agentConfigs.length, 3);
 assert.ok(report.evidenceManifest.latency.responseLatencySamples >= 0);
+assert.ok(report.roomMemoryLedger.coverage.totalFacts >= 3, "report should extract room memory facts");
+assert.ok(
+  report.roomMemoryLedger.facts.some((fact) => fact.participantName === "Alex" && fact.ruleId === "budget_sensitive"),
+  "memory ledger should remember Alex's budget constraint",
+);
+assert.ok(report.evidenceManifest.memory.facts >= 3, "eval manifest should summarize memory evidence");
+assert.ok(report.roomMoodTimeline.humanMoodEvents.length >= 3, "report should infer human mood events");
+assert.ok(report.evidenceManifest.mood.humanMoodEvents >= 3, "eval manifest should summarize mood evidence");
 assert.equal(observerReport.routingRecommendation.sessionFeedback.routeNextVotes, 1);
 assert.ok(observerReport.routingRecommendation.routeNextTime);
 assert.ok(observerReport.routingRecommendation.reason.includes("session feedback"));
@@ -223,6 +233,21 @@ assert.ok(
 const firstAiAgentReport = report.agents.find((agent) => agent.agentId === aiMessages[0].agentId);
 assert.ok(firstAiAgentReport.stats.wrongPersonFeedbackRate > 0);
 assert.ok(firstAiAgentReport.failureModes.includes("Wrong person targeting"));
+assert.ok(firstAiAgentReport.failureModes.includes("Memory miss"));
+assert.ok(firstAiAgentReport.socialIntelligenceReview, "agent report should include social intelligence review");
+assert.ok(Array.isArray(firstAiAgentReport.automaticReception), "agent report should include automatic reception");
+assert.ok(
+  firstAiAgentReport.automaticReception.every((entry) => ["positive", "negative", "unclear"].includes(entry.sentiment)),
+  "automatic reception should classify message reception without manual labels",
+);
+assert.ok(
+  firstAiAgentReport.socialIntelligenceReview.categories.some((category) => category.id === "memory_context"),
+  "social review should include memory/context category",
+);
+assert.ok(
+  firstAiAgentReport.socialIntelligenceReview.categories.some((category) => category.id === "mood_impact"),
+  "social review should include mood impact category",
+);
 for (const scoreKey of ["casualScore", "roleplayScore", "adviceScore", "gameNightScore", "debateScore", "supportScore"]) {
   assert.ok(scoreKey in mediatorReport.routingScores, `routing scores should include ${scoreKey}`);
 }
@@ -335,6 +360,10 @@ assert.ok(
   improvedReport.comparison.every((item) => "humanConversationLift" in item.baseline && "humanMomentumDirection" in item.baseline),
   "comparison should include human momentum metrics",
 );
+assert.ok(
+  improvedReport.comparison.every((item) => "memoryReferenceRate" in item.baseline && "moodImpactScore" in item.baseline),
+  "comparison should include memory and mood metrics",
+);
 room.activePolicyOverrides = { mediator_v1: improvedReport.agents[0].policyDiff.after };
 room.currentPolicyVersion = `improved_from_${improvedReport.id.slice(0, 8)}`;
 resetRoomForNextRun(room, "improved");
@@ -358,6 +387,8 @@ assert.equal(observerTurn.aiMessage.agentId, "observer_v1");
 
 const exported = createExport(room);
 assert.equal(exported.room.id, "test-room");
+assert.ok(exported.roomMemoryLedger, "export should include current room memory ledger");
+assert.ok(exported.roomMoodTimeline, "export should include current room mood timeline");
 assert.ok(Array.isArray(exported.transcript));
 assert.ok(
   exported.transcript
@@ -390,6 +421,10 @@ assert.ok(
 assert.ok(
   exported.runs.some((run) => run.policyMode === "improved" && run.transcript.length > 0),
   "run archive should preserve improved transcript",
+);
+assert.ok(
+  exported.runs.some((run) => run.roomMemoryLedger && run.roomMoodTimeline),
+  "run archive should preserve memory and mood evidence",
 );
 assert.ok(Array.isArray(exported.room.routingDecisions));
 

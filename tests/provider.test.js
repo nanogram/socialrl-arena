@@ -92,13 +92,17 @@ async function main() {
     assert.ok(Array.isArray(reportPrompt.evalInputs.routingDecisions));
     assert.ok(Array.isArray(reportPrompt.evalInputs.messageFeedback));
     assert.ok(Array.isArray(reportPrompt.evalInputs.sessionFeedback));
+    assert.ok(reportPrompt.evalInputs.roomMemoryLedger);
+    assert.ok(reportPrompt.evalInputs.roomMoodTimeline);
     assert.ok(Array.isArray(reportPrompt.evalInputs.messageLatency));
     assert.equal(reportPrompt.evalInputs.agentConfigs.length, 3);
     assert.equal(reportPrompt.evalInputs.evidenceManifest.transcript.messages, room.messages.length);
     assert.equal(reportPrompt.draftReport.evidenceManifest.transcript.messages, room.messages.length);
     assert.ok(
-      reportPrompt.draftReport.agents.every((agent) => agent.decisionReview && agent.routingScores),
-      "report judge prompt should include per-agent decision review and routing scores",
+      reportPrompt.draftReport.agents.every(
+        (agent) => agent.decisionReview && agent.socialIntelligenceReview && agent.automaticReception && agent.routingScores,
+      ),
+      "report judge prompt should include per-agent decision review, automatic reception, social review, and routing scores",
     );
 
     assert.ok(calls.every((call) => call.url === "https://api.openai.test/v1/responses"));

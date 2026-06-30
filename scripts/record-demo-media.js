@@ -138,7 +138,7 @@ async function recordDemo(chromium) {
   await annotate(
     page,
     "Normal chat view",
-    "The message list owns the scroll area and the compact composer stays pinned low instead of expanding into the page.",
+    "The message list owns the scroll area, and AI reception is processed in the background from follow-up mood and replies.",
   );
   await page.waitForTimeout(4200);
 
@@ -169,6 +169,22 @@ async function recordDemo(chromium) {
   await openPanel(page, "Active Policies");
   await page.waitForTimeout(2200);
 
+  await openPanel(page, "Room Memory Ledger");
+  await annotate(
+    page,
+    "Room memory ledger",
+    "The report extracts participant preferences and constraints, then checks whether later AI messages respected or ignored them.",
+  );
+  await page.waitForTimeout(3200);
+
+  await openPanel(page, "Room Mood");
+  await annotate(
+    page,
+    "Room mood tracking",
+    "Human messages are labeled as neutral, frustrated, happy, relaxed, tense, focused, or confused so agent impact can be judged.",
+  );
+  await page.waitForTimeout(3200);
+
   await openPanel(page, "Room Metrics");
   await page.waitForTimeout(2200);
 
@@ -188,15 +204,22 @@ async function recordDemo(chromium) {
   await annotate(
     page,
     "Agent Performance Report",
-    "Reports turn transcript, decisions, feedback, latency, and routing evidence into scores, policy diffs, and before/after comparison.",
+    "Reports now combine transcript, decisions, feedback, memory, mood, latency, and routing evidence into social participation scores.",
   );
-  await page.waitForTimeout(6500);
+  await page.waitForTimeout(3500);
+  await page.locator("text=Social Intelligence Review").first().scrollIntoViewIfNeeded({ timeout: 5000 });
+  await annotate(
+    page,
+    "Social intelligence review",
+    "Each agent is scored on automatic reception, timing, restraint, vibe, memory/context, mood impact, routing, and latency.",
+  );
+  await page.waitForTimeout(4500);
 
   await page.goto(`${baseUrl}/rooms/${roomId}/agents/mediator_v1`, { waitUntil: "networkidle" });
   await annotate(
     page,
     "Agent-specific review",
-    "Each agent gets stats, best/worst messages, decision review, routing recommendation, and the updated participation policy.",
+    "Each agent gets automatic reception, mood impact, memory usage, stats, decision review, routing recommendation, and policy guidance.",
   );
   await page.waitForTimeout(6200);
 

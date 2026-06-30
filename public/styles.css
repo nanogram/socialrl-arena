@@ -806,6 +806,13 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
   margin-top: 10px;
 }
 
+.feedback-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .feedback-select-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -950,6 +957,25 @@ body[data-view="chat"][data-debug-panel="hidden"] .normal-session-feedback:not(:
 .report {
   display: grid;
   gap: 10px;
+}
+
+.evidence-item {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.evidence-item p {
+  margin: 0;
+}
+
+.tag.risk {
+  border-color: rgba(132, 67, 46, 0.36);
+  background: #fff5ef;
+  color: #84432e;
 }
 
 .setup-panel {

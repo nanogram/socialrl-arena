@@ -154,19 +154,31 @@ async function main() {
   assert.ok(roomReportWrite);
   assert.ok(roomReportWrite.sql.includes("model_routing_summary"));
   assert.ok(roomReportWrite.sql.includes("evidence_manifest"));
+  assert.ok(roomReportWrite.sql.includes("room_memory_ledger"));
+  assert.ok(roomReportWrite.sql.includes("room_mood_timeline"));
   const persistedModelRoutingSummary = JSON.parse(roomReportWrite.params[7]);
   assert.equal(persistedModelRoutingSummary.latestPlan.report.tier, "strong");
   const persistedEvidenceManifest = JSON.parse(roomReportWrite.params[8]);
   assert.equal(persistedEvidenceManifest.transcript.messages, room.messages.length);
   assert.equal(persistedEvidenceManifest.agentConfigs.length, 2);
+  const persistedMemoryLedger = JSON.parse(roomReportWrite.params[9]);
+  assert.ok(Array.isArray(persistedMemoryLedger.facts));
+  const persistedMoodTimeline = JSON.parse(roomReportWrite.params[10]);
+  assert.ok(Array.isArray(persistedMoodTimeline.humanMoodEvents));
   const agentReportWrite = fakeClient.queries.find((entry) =>
     entry.sql.startsWith("insert into agent_reports"),
   );
   assert.ok(agentReportWrite);
   assert.ok(agentReportWrite.sql.includes("decision_review"));
+  assert.ok(agentReportWrite.sql.includes("social_intelligence_review"));
+  assert.ok(agentReportWrite.sql.includes("automatic_reception"));
   const persistedDecisionReview = JSON.parse(agentReportWrite.params[8]);
   assert.ok(persistedDecisionReview.summary);
   assert.ok(Array.isArray(persistedDecisionReview.sampledDecisions));
+  const persistedSocialReview = JSON.parse(agentReportWrite.params[9]);
+  assert.ok(Array.isArray(persistedSocialReview.categories));
+  const persistedAutomaticReception = JSON.parse(agentReportWrite.params[10]);
+  assert.ok(Array.isArray(persistedAutomaticReception));
   assert.ok(writtenTables.some((sql) => sql.startsWith("delete from participants")));
   const participantWrites = fakeClient.queries.filter((entry) =>
     entry.sql.startsWith("insert into participants"),

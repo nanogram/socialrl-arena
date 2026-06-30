@@ -11,19 +11,6 @@ const state = {
   replyTargetId: null,
 };
 
-const quickFeedbackOrder = [
-  "helped_us_decide",
-  "good_timing",
-  "made_chat_fun",
-  "good_read",
-  "reduced_tension",
-  "should_have_stayed_quiet",
-  "interrupted_humans",
-  "too_verbose",
-  "wrong_vibe",
-  "ignored_quiet_person",
-];
-
 const maxNormalParticipants = 6;
 
 const messagesEl = document.querySelector("#messages");
@@ -51,6 +38,8 @@ const agentTogglesEl = document.querySelector("#agentToggles");
 const inviteLinkInput = document.querySelector("#inviteLink");
 const participantsEl = document.querySelector("#participants");
 const policiesEl = document.querySelector("#policies");
+const memoryLedgerEl = document.querySelector("#memoryLedger");
+const moodTimelineEl = document.querySelector("#moodTimeline");
 const sessionFeedbackForm = document.querySelector("#sessionFeedbackForm");
 const mostUsefulAgent = document.querySelector("#mostUsefulAgent");
 const mostAnnoyingAgent = document.querySelector("#mostAnnoyingAgent");
@@ -334,6 +323,8 @@ function render() {
   renderPrimaryPanel();
   renderParticipants();
   renderPolicies();
+  renderMemoryLedger();
+  renderMoodTimeline();
   renderDecisions();
   renderRoutingDecisions();
   renderRoomMetrics();
@@ -814,6 +805,8 @@ function renderReportPage() {
       </article>
       ${renderSystemPerformance(report.systemPerformance)}
       ${renderModelRoutingSummary(report.modelRoutingSummary)}
+      ${renderRoomMemoryLedger(report.roomMemoryLedger)}
+      ${renderRoomMoodTimeline(report.roomMoodTimeline)}
       ${renderEvidenceManifest(report.evidenceManifest)}
       ${report.agents.map(renderExpandedAgentReport).join("")}
       ${renderComparison(report)}
@@ -881,6 +874,8 @@ function renderAgentPage(agentId) {
         </div>
       </article>
       ${renderAgentStats(agent)}
+      ${renderSocialIntelligenceReview(agent.socialIntelligenceReview)}
+      ${renderAutomaticReception(agent.automaticReception)}
       ${renderDecisionReview(agent.decisionReview)}
       ${renderFailureModeCard(agent)}
       <article class="report-card">
@@ -983,32 +978,16 @@ function clearReplyTarget() {
 function renderFeedbackControls(message) {
   return `
     <div class="feedback-controls">
-      <div class="feedback-bar">${quickFeedbackOrder.map((tag) => renderFeedbackButton(message, tag)).join("")}</div>
+      <p class="feedback-note">Reception is inferred automatically in the report from follow-up mood, replies, momentum, and memory use.</p>
       <div class="feedback-select-row">
         <select data-feedback-select="${message.id}" aria-label="Feedback tag">
-          <option value="">More feedback</option>
+          <option value="">Optional reviewer label</option>
           ${renderFeedbackOptions()}
         </select>
         <button type="button" data-feedback-add data-message-id="${message.id}">Add</button>
       </div>
+      <div class="feedback-bar">${message.feedback.map((entry) => `<span class="tag">${formatTag(entry.tag)}</span>`).join("")}</div>
     </div>
-  `;
-}
-
-function renderFeedbackButton(message, tag) {
-  const definition = state.room.feedbackDefinitions[tag];
-  if (!definition) return "";
-  const count = message.feedback.filter((entry) => entry.tag === tag).length;
-  return `
-    <button
-      type="button"
-      class="${count ? "selected" : ""}"
-      data-message-id="${message.id}"
-      data-feedback-tag="${tag}"
-      title="${escapeHtml(definition.category)}"
-    >
-      ${escapeHtml(definition.label)}${count ? ` ${count}` : ""}
-    </button>
   `;
 }
 
@@ -1226,6 +1205,26 @@ function renderPolicies() {
     .join("");
 }
 
+function renderMemoryLedger() {
+  const room = state.room;
+  if (!room) {
+    memoryLedgerEl.innerHTML = "";
+    return;
+  }
+  const report = room.reports[room.reports.length - 1];
+  memoryLedgerEl.innerHTML = renderRoomMemoryLedger(report && report.roomMemoryLedger);
+}
+
+function renderMoodTimeline() {
+  const room = state.room;
+  if (!room) {
+    moodTimelineEl.innerHTML = "";
+    return;
+  }
+  const report = room.reports[room.reports.length - 1];
+  moodTimelineEl.innerHTML = renderRoomMoodTimeline(report && report.roomMoodTimeline);
+}
+
 function renderRoomMetrics() {
   const room = state.room;
   if (!room) {
@@ -1338,6 +1337,8 @@ function renderReport() {
       ${renderSessionFeedback(report.sessionFeedbackSummary)}
     </article>
     ${renderModelRoutingSummary(report.modelRoutingSummary)}
+    ${renderRoomMemoryLedger(report.roomMemoryLedger)}
+    ${renderRoomMoodTimeline(report.roomMoodTimeline)}
     ${renderEvidenceManifest(report.evidenceManifest)}
     ${report.agents.map(renderAgentReport).join("")}
     ${renderComparison(report)}
@@ -1365,6 +1366,8 @@ function renderEvidenceManifest(manifest = {}) {
   const transcript = manifest.transcript || {};
   const decisions = manifest.decisions || {};
   const feedback = manifest.feedback || {};
+  const memory = manifest.memory || {};
+  const mood = manifest.mood || {};
   const latency = manifest.latency || {};
   const archive = manifest.archive || {};
   const agentConfigs = Array.isArray(manifest.agentConfigs) ? manifest.agentConfigs : [];
@@ -1382,6 +1385,9 @@ function renderEvidenceManifest(manifest = {}) {
         ${metric("Routes", decisions.routingDecisions || 0)}
         ${metric("Feedback", feedback.messageFeedback || 0)}
         ${metric("Session feedback", feedback.sessionFeedback || 0)}
+        ${metric("Memory facts", memory.facts || 0)}
+        ${metric("Current mood", formatTag(mood.currentMood || "neutral"))}
+        ${metric("Mood impacts", mood.agentMoodImpacts || 0)}
         ${metric("Latency samples", latency.responseLatencySamples || 0)}
         ${metric("Token samples", latency.tokenCountSamples || 0)}
         ${metric("Agent configs", agentConfigs.length)}
@@ -1395,6 +1401,147 @@ function renderEvidenceManifest(manifest = {}) {
           )
           .join("")}
       </div>
+    </article>
+  `;
+}
+
+function renderRoomMemoryLedger(ledger) {
+  if (!ledger || !Array.isArray(ledger.facts) || !ledger.facts.length) {
+    return `
+      <article class="report-card">
+        <div class="report-title"><strong>Room Memory Ledger</strong></div>
+        <p>No remembered participant preferences or room constraints detected yet.</p>
+      </article>
+    `;
+  }
+  const coverage = ledger.coverage || {};
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Room Memory Ledger</strong></div>
+      <p>${escapeHtml(ledger.summary || "")}</p>
+      <div class="metric-grid">
+        ${metric("Facts", coverage.totalFacts || ledger.facts.length)}
+        ${metric("Respected", coverage.respectedFacts || 0)}
+        ${metric("Ignored", coverage.ignoredFacts || 0)}
+        ${metric("Profiles", Array.isArray(ledger.participants) ? ledger.participants.length : 0)}
+      </div>
+      ${ledger.facts
+        .slice(0, 6)
+        .map(
+          (fact) => `
+            <div class="evidence-item">
+              <strong>${escapeHtml(fact.participantName)} · ${escapeHtml(fact.label)}</strong>
+              <p>${escapeHtml(fact.summary)}</p>
+              <div class="tag-list">
+                <span class="tag">${escapeHtml(formatTag(fact.kind))}</span>
+                <span class="tag">${escapeHtml(formatTag((fact.aiUse && fact.aiUse.status) || "not_tested"))}</span>
+                <span class="tag">${Math.round(Number(fact.confidence || 0) * 100)}% confidence</span>
+              </div>
+            </div>
+          `,
+        )
+        .join("")}
+    </article>
+  `;
+}
+
+function renderRoomMoodTimeline(timeline) {
+  if (!timeline || !Array.isArray(timeline.humanMoodEvents) || !timeline.humanMoodEvents.length) {
+    return `
+      <article class="report-card">
+        <div class="report-title"><strong>Room Mood</strong></div>
+        <p>No human mood evidence captured yet.</p>
+      </article>
+    `;
+  }
+  const impacts = Array.isArray(timeline.agentImpacts) ? timeline.agentImpacts : [];
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Room Mood</strong></div>
+      <p>${escapeHtml(timeline.summary || "")}</p>
+      <div class="metric-grid">
+        ${metric("Current", formatTag(timeline.currentMood || "neutral"))}
+        ${metric("Avg score", timeline.averageMoodScore || 0)}
+        ${metric("Improved", impacts.filter((impact) => impact.impact === "improved").length)}
+        ${metric("Worsened", impacts.filter((impact) => impact.impact === "worsened").length)}
+      </div>
+      <div class="tag-list">
+        ${Object.entries(timeline.moodCounts || {})
+          .map(([mood, count]) => `<span class="tag">${formatTag(mood)} ${count}</span>`)
+          .join("")}
+      </div>
+      ${impacts
+        .slice(-4)
+        .map(
+          (impact) => `
+            <div class="evidence-item">
+              <strong>${escapeHtml(impact.senderName || impact.agentId || "Agent")} · ${escapeHtml(formatTag(impact.impact))}</strong>
+              <p>${escapeHtml(formatTag(impact.beforeMood))} to ${escapeHtml(formatTag(impact.afterMood))} (${signed(impact.delta || 0)})</p>
+            </div>
+          `,
+        )
+        .join("")}
+    </article>
+  `;
+}
+
+function renderSocialIntelligenceReview(review) {
+  if (!review || !Array.isArray(review.categories)) return "";
+  return `
+    <article class="report-card social-review-card">
+      <div class="report-title"><strong>Social Intelligence Review</strong></div>
+      <p>${escapeHtml(review.summary || "")}</p>
+      <div class="metric-grid">
+        ${review.categories
+          .map((category) => metric(category.label, `${category.score} · ${formatTag(category.verdict)}`))
+          .join("")}
+      </div>
+      <div class="tag-list">
+        ${(review.strengths || []).map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join("")}
+        ${(review.risks || []).map((item) => `<span class="tag risk">${escapeHtml(item)}</span>`).join("")}
+      </div>
+      ${(review.concreteEvidence || [])
+        .map(
+          (item) => `
+            <div class="evidence-item">
+              <strong>${escapeHtml(item.label || formatTag(item.type || "evidence"))}</strong>
+              <p>${escapeHtml(item.text || "")}</p>
+              <div class="tag-list">${(item.tags || []).map((tag) => `<span class="tag">${formatTag(tag)}</span>`).join("")}</div>
+            </div>
+          `,
+        )
+        .join("")}
+    </article>
+  `;
+}
+
+function renderAutomaticReception(reception) {
+  if (!Array.isArray(reception) || !reception.length) return "";
+  const counts = reception.reduce((acc, entry) => {
+    acc[entry.sentiment] = (acc[entry.sentiment] || 0) + 1;
+    return acc;
+  }, {});
+  return `
+    <article class="report-card">
+      <div class="report-title"><strong>Automatic Reception</strong></div>
+      <p>Background processing estimates how each AI message landed from follow-up mood, replies, human momentum, and memory use.</p>
+      <div class="metric-grid">
+        ${metric("Positive", counts.positive || 0)}
+        ${metric("Negative", counts.negative || 0)}
+        ${metric("Unclear", counts.unclear || 0)}
+      </div>
+      ${reception
+        .slice(0, 4)
+        .map(
+          (entry) => `
+            <div class="evidence-item">
+              <strong>${escapeHtml(formatTag(entry.sentiment || "unclear"))}</strong>
+              <p>${escapeHtml(entry.summary || "")}</p>
+              <div class="tag-list">${(entry.signals || []).slice(0, 4).map((tag) => `<span class="tag">${formatTag(tag)}</span>`).join("")}</div>
+            </div>
+          `,
+        )
+        .join("")}
     </article>
   `;
 }
@@ -1424,6 +1571,8 @@ function renderAgentReport(agentReport) {
         ${metric("Wrong person", `${Math.round((agentReport.stats.wrongPersonFeedbackRate || 0) * 100)}%`)}
         ${metric("Human trend", formatTag(agentReport.stats.humanMomentumDirection || "same"))}
         ${metric("Human lift", signedPercent(agentReport.stats.humanConversationLift || 0))}
+        ${metric("Memory", `${agentReport.stats.memoryFactsReferenced || 0}/${(agentReport.stats.memoryFactsReferenced || 0) + (agentReport.stats.memoryFactsIgnored || 0)}`)}
+        ${metric("Mood impact", signed(agentReport.stats.moodImpactScore || 0))}
         ${metric("Selected", agentReport.stats.routingSelectedCount)}
         ${metric("Should speak", formatDecisionVerdict(agentReport.decisionReview && agentReport.decisionReview.shouldHaveSpoken))}
         ${metric("Msg/min", agentReport.stats.averageMessagesPerMinute)}
@@ -1449,6 +1598,8 @@ function renderExpandedAgentReport(agentReport) {
       <p><strong>Policy rationale:</strong> ${escapeHtml(agentReport.policyDiff.rationale)}</p>
       ${renderRoutingScores(agentReport.routingScores)}
     </article>
+    ${renderSocialIntelligenceReview(agentReport.socialIntelligenceReview)}
+    ${renderAutomaticReception(agentReport.automaticReception)}
     ${renderDecisionReview(agentReport.decisionReview)}
   `;
 }
@@ -1610,6 +1761,9 @@ function renderAgentStats(agentReport) {
         ${metric("Human delta", signed(stats.humanConversationDelta || 0))}
         ${metric("Human lift", signedPercent(stats.humanConversationLift || 0))}
         ${metric("Human trend", formatTag(stats.humanMomentumDirection || "same"))}
+        ${metric("Memory used", `${stats.memoryFactsReferenced || 0}/${(stats.memoryFactsReferenced || 0) + (stats.memoryFactsIgnored || 0)}`)}
+        ${metric("Mood +", stats.moodPositiveImpacts || 0)}
+        ${metric("Mood -", stats.moodNegativeImpacts || 0)}
         ${metric("Route success", `${Math.round(stats.routingSuccessRate * 100)}%`)}
       </div>
       <div class="tag-list">
@@ -1703,7 +1857,9 @@ function renderComparison(report) {
                 <span>
                   messages ${signed(item.messageDelta)},
                   timing ${signed(item.timingScoreDelta)},
-                  restraint ${signed(item.restraintScoreDelta)}
+                  restraint ${signed(item.restraintScoreDelta)},
+                  memory ${signedPercent(item.memoryReferenceDelta || 0)},
+                  mood ${signed(item.moodImpactDelta || 0)}
                 </span>
               </div>
               <div class="comparison-grid">
@@ -1788,8 +1944,10 @@ function comparisonColumn(title, values) {
       <span>${Number(values.helpedDecideTags || 0)} helped-decide tags</span>
       <span>${Math.round(Number(values.replyTargetRate || 0) * 100)}% reply-targeted</span>
       <span>${Math.round(Number(values.wrongPersonFeedbackRate || 0) * 100)}% wrong-person feedback</span>
+      <span>${Math.round(Number(values.memoryReferenceRate || 0) * 100)}% memory referenced</span>
       <span>human trend ${escapeHtml(formatTag(values.humanMomentumDirection || "same"))}</span>
       <span>human lift ${escapeHtml(signedPercent(values.humanConversationLift || 0))}</span>
+      <span>mood impact ${escapeHtml(signed(values.moodImpactScore || 0))}</span>
       <span>Timing ${escapeHtml(String(values.timingScore || 0))} · Restraint ${escapeHtml(String(values.restraintScore || 0))}</span>
     </div>
   `;

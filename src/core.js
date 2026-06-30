@@ -208,6 +208,11 @@ const feedbackDefinitions = {
     sentiment: "positive",
     category: "social_awareness",
   },
+  good_restraint: {
+    label: "Good restraint",
+    sentiment: "positive",
+    category: "timing",
+  },
   stayed_in_character: {
     label: "Stayed in character",
     sentiment: "positive",
@@ -268,6 +273,11 @@ const feedbackDefinitions = {
     sentiment: "negative",
     category: "social_awareness",
   },
+  memory_miss: {
+    label: "Memory miss",
+    sentiment: "negative",
+    category: "social_awareness",
+  },
   misread_room: {
     label: "Misread room",
     sentiment: "negative",
@@ -304,6 +314,90 @@ const feedbackDefinitions = {
     category: "group_usefulness",
   },
 };
+
+const memorySignalRules = [
+  {
+    id: "budget_sensitive",
+    kind: "constraint",
+    label: "Budget sensitivity",
+    patterns: [/\bcheap\b/i, /\bbudget\b/i, /\bcost\b/i, /\bprice\b/i, /\bexpensive\b/i],
+    referencePatterns: [/\bcheap\b/i, /\bbudget\b/i, /\bcost\b/i, /\bprice\b/i, /\baffordable\b/i],
+    summary: (speaker) => `${speaker} needs the plan to stay affordable.`,
+  },
+  {
+    id: "nightlife_preference",
+    kind: "preference",
+    label: "Nightlife",
+    patterns: [/\bnightlife\b/i, /\bnight out\b/i, /\bbars?\b/i, /\bclubs?\b/i, /\bcloses?\b/i],
+    referencePatterns: [/\bnightlife\b/i, /\bnight out\b/i, /\bbars?\b/i, /\bcloses?\b/i],
+    summary: (speaker) => `${speaker} cares about nightlife or late-night options.`,
+  },
+  {
+    id: "nature_preference",
+    kind: "preference",
+    label: "Nature",
+    patterns: [/\bnature\b/i, /\blake\b/i, /\btrail/i, /\bcabin\b/i, /\bhike/i],
+    referencePatterns: [/\bnature\b/i, /\blake\b/i, /\btrail/i, /\bcabin\b/i, /\bhike/i],
+    summary: (speaker) => `${speaker} wants nature, trails, a lake, or a cabin option.`,
+  },
+  {
+    id: "derailing_side_chatter",
+    kind: "room_dynamic",
+    label: "Derailing side chatter",
+    patterns: [/\bunrelated\b/i, /\bpizza\b/i, /\bside quest\b/i, /\boff[- ]?topic\b/i, /\btangent\b/i],
+    referencePatterns: [/\bpark\b/i, /\bfocus\b/i, /\btangent\b/i, /\bside quest\b/i, /\boff[- ]?topic\b/i, /\bpizza\b/i],
+    summary: (speaker) => `${speaker} introduced side chatter that may need gentle redirection.`,
+  },
+  {
+    id: "decision_pressure",
+    kind: "room_need",
+    label: "Decision pressure",
+    patterns: [/\bdecide\b/i, /\bchoose\b/i, /\bpick\b/i, /\bvote\b/i, /\bfork\b/i],
+    referencePatterns: [/\bdecide\b/i, /\bchoose\b/i, /\bpick\b/i, /\bvote\b/i, /\bfork\b/i],
+    summary: (speaker) => `${speaker} is pushing the room toward a concrete decision.`,
+  },
+  {
+    id: "social_tension",
+    kind: "room_dynamic",
+    label: "Social tension",
+    patterns: [/\bignored\b/i, /\bannoying\b/i, /\bfrustrated\b/i, /\bnobody is listening\b/i, /\btension\b/i],
+    referencePatterns: [/\btension\b/i, /\bheard\b/i, /\blistening\b/i, /\bconstraint\b/i, /\bslow down\b/i],
+    summary: (speaker) => `${speaker} surfaced tension or a need to feel heard.`,
+  },
+];
+
+const moodSignalRules = [
+  {
+    mood: "frustrated",
+    score: -2,
+    patterns: [/\bfrustrated\b/i, /\bannoying\b/i, /\bnobody is listening\b/i, /\bignored\b/i, /\bi am out\b/i],
+  },
+  {
+    mood: "tense",
+    score: -2,
+    patterns: [/\bcan't\b/i, /\bcant\b/i, /\bcannot\b/i, /\bhate\b/i, /\bno way\b/i, /\bstressed\b/i, /\btension\b/i],
+  },
+  {
+    mood: "confused",
+    score: -1,
+    patterns: [/\bconfused\b/i, /\bnot sure\b/i, /\bunclear\b/i, /\bwhat if\b/i, /\bmaybe\b/i],
+  },
+  {
+    mood: "happy",
+    score: 2,
+    patterns: [/\bhappy\b/i, /\bexcited\b/i, /\blove\b/i, /\bgreat\b/i, /\bfun\b/i],
+  },
+  {
+    mood: "relaxed",
+    score: 1,
+    patterns: [/\brelaxed\b/i, /\bchill\b/i, /\bno rush\b/i, /\bfine\b/i, /\beasy\b/i],
+  },
+  {
+    mood: "focused",
+    score: 1,
+    patterns: [/\bdecide\b/i, /\bpick\b/i, /\bvote\b/i, /\bconstraint\b/i, /\boptimize\b/i],
+  },
+];
 
 const agents = [
   {
@@ -500,6 +594,8 @@ function archiveCurrentRun(room) {
     reportJobs: cloneJson(room.reportJobs),
     feedback: cloneJson(room.feedback),
     sessionFeedback: cloneJson(room.sessionFeedback),
+    roomMemoryLedger: buildRoomMemoryLedger(room),
+    roomMoodTimeline: buildRoomMoodTimeline(room),
     reports: cloneJson(reports),
   };
 
@@ -1216,7 +1312,11 @@ function buildReport(room, options = {}) {
     replaceLatest && replacementIndex >= 0 && room.reports[replacementIndex]
       ? room.reports[replacementIndex].id
       : randomUUID();
-  const agentReports = getRoomAgents(room).map((agent) => buildAgentReport(room, agent));
+  const roomMemoryLedger = buildRoomMemoryLedger(room);
+  const roomMoodTimeline = buildRoomMoodTimeline(room);
+  const agentReports = getRoomAgents(room).map((agent) =>
+    buildAgentReport(room, agent, roomMemoryLedger, roomMoodTimeline),
+  );
   const previousReport =
     replaceLatest && replacementIndex >= 0
       ? room.reports
@@ -1238,6 +1338,8 @@ function buildReport(room, options = {}) {
     sessionFeedbackSummary: summarizeSessionFeedback(room),
     modelRoutingSummary: buildModelRoutingSummary(room),
     evidenceManifest: buildEvidenceManifest(room),
+    roomMemoryLedger,
+    roomMoodTimeline,
     systemPerformance: buildSystemPerformance(room, options.systemContext),
     agents: agentReports,
     comparison: previousReport ? compareReports(previousReport, agentReports) : [],
@@ -1257,7 +1359,12 @@ function refreshLatestReport(room, options = {}) {
   return buildReport(room, { ...options, replaceLatest: true });
 }
 
-function buildAgentReport(room, agent) {
+function buildAgentReport(
+  room,
+  agent,
+  roomMemoryLedger = buildRoomMemoryLedger(room),
+  roomMoodTimeline = buildRoomMoodTimeline(room),
+) {
   const messages = room.messages.filter((message) => message.agentId === agent.id);
   const decisions = room.decisions.filter((decision) => decision.agentId === agent.id);
   const feedback = room.feedback.filter((entry) =>
@@ -1286,6 +1393,10 @@ function buildAgentReport(room, agent) {
   const quietParticipantTargets = decisions.filter(
     (decision) => decision.targetUser && targetUserIsNotTriggerSender(room, decision),
   ).length;
+  const memoryUse = summarizeAgentMemoryUse(messages, roomMemoryLedger);
+  const moodImpact = summarizeAgentMoodImpact(agent.id, roomMoodTimeline);
+  const automaticReception = buildAutomaticReception(room, messages, roomMemoryLedger, roomMoodTimeline);
+  const automaticReceptionCounts = countBy(automaticReception, "sentiment");
 
   const stats = {
     totalMessages: messages.length,
@@ -1316,6 +1427,16 @@ function buildAgentReport(room, agent) {
     humanConversationDelta,
     humanConversationLift: round(humanConversationDelta / Math.max(1, humanMessageWindow.before)),
     humanMomentumDirection: humanMomentumDirection(humanConversationDelta),
+    memoryFactsReferenced: memoryUse.referenced,
+    memoryFactsIgnored: memoryUse.ignored,
+    memoryReferenceRate: memoryUse.total ? round(memoryUse.referenced / memoryUse.total) : 0,
+    moodPositiveImpacts: moodImpact.positive,
+    moodNegativeImpacts: moodImpact.negative,
+    moodNeutralImpacts: moodImpact.neutral,
+    moodImpactScore: moodImpact.score,
+    automaticPositiveReception: automaticReceptionCounts.positive || 0,
+    automaticNegativeReception: automaticReceptionCounts.negative || 0,
+    automaticUnclearReception: automaticReceptionCounts.unclear || 0,
     feedbackTagCounts: tagCounts,
   };
 
@@ -1323,6 +1444,17 @@ function buildAgentReport(room, agent) {
   const bestMessages = pickMessages(room.messages, messages, "positive");
   const worstMessages = pickMessages(room.messages, messages, "negative");
   const decisionReview = buildDecisionReview(room, agent, decisions, messages, stats, tagCounts);
+  const socialIntelligenceReview = buildSocialIntelligenceReview(
+    room,
+    agent,
+    messages,
+    decisions,
+    stats,
+    tagCounts,
+    scorecard,
+    roomMemoryLedger,
+    roomMoodTimeline,
+  );
 
   return {
     agentId: agent.id,
@@ -1337,6 +1469,8 @@ function buildAgentReport(room, agent) {
     scorecard,
     stats,
     decisionReview,
+    socialIntelligenceReview,
+    automaticReception,
     routingScores: buildAgentRoutingScores(agent, scorecard, stats, room),
     failureModes: inferFailureModes(stats, tagCounts),
     bestMessages,
@@ -1363,6 +1497,7 @@ function buildScorecard(stats, tagCounts, rawMessageCount) {
     timing: boundedScore(
       3 +
         (tagCounts.good_timing || 0) +
+        (tagCounts.good_restraint || 0) +
         (tagCounts.revived_dead_chat || 0) +
         (tagCounts.reduced_tension || 0) -
         (tagCounts.should_have_stayed_quiet || 0) -
@@ -1387,6 +1522,7 @@ function buildScorecard(stats, tagCounts, rawMessageCount) {
         (tagCounts.reduced_tension || 0) -
         (tagCounts.wrong_vibe || 0) -
         (tagCounts.misread_room || 0) -
+        (tagCounts.memory_miss || 0) -
         (tagCounts.ignored_quiet_person || 0) -
         (tagCounts.responded_wrong_person || 0) -
         (tagCounts.missed_social_tension || 0) -
@@ -1418,8 +1554,497 @@ function buildScorecard(stats, tagCounts, rawMessageCount) {
         (tagCounts.boring || 0) +
         (tagCounts.wrong_vibe ? -1 : 0),
     ),
-    restraint: boundedScore(4 - stats.shouldHaveStayedQuietRate * 3 - stats.interruptionRate),
+    restraint: boundedScore(4 + (tagCounts.good_restraint || 0) - stats.shouldHaveStayedQuietRate * 3 - stats.interruptionRate),
   };
+}
+
+function buildRoomMemoryLedger(room) {
+  const messages = Array.isArray(room.messages) ? room.messages : [];
+  const humanMessages = messages.filter((message) => message.senderType === "human");
+  const aiMessages = messages.filter((message) => message.senderType === "ai");
+  const factMap = new Map();
+
+  humanMessages.forEach((message, index) => {
+    memorySignalRules.forEach((rule) => {
+      if (!rule.patterns.some((pattern) => pattern.test(message.content || ""))) return;
+      const key = `${message.senderName}:${rule.id}`;
+      const existing =
+        factMap.get(key) ||
+        {
+          id: `${slugifyMemoryId(message.senderName)}:${rule.id}`,
+          participantName: message.senderName,
+          kind: rule.kind,
+          label: rule.label,
+          ruleId: rule.id,
+          summary: rule.summary(message.senderName),
+          evidence: [],
+          firstMessageIndex: index,
+        };
+      existing.evidence.push({
+        messageId: message.id,
+        text: message.content,
+        createdAt: message.createdAt,
+      });
+      existing.firstMessageIndex = Math.min(existing.firstMessageIndex, index);
+      factMap.set(key, existing);
+    });
+  });
+
+  const facts = [...factMap.values()].map((fact) => {
+    const aiAfterFact = aiMessages.filter(
+      (message) => messages.findIndex((candidate) => candidate.id === message.id) > fact.firstMessageIndex,
+    );
+    const rule = memorySignalRules.find((candidate) => candidate.id === fact.ruleId);
+    const referencedBy = aiAfterFact
+      .filter((message) => memoryRuleMatches(rule, message.content || ""))
+      .map((message) => ({
+        messageId: message.id,
+        agentId: message.agentId,
+        senderName: message.senderName,
+        text: message.content,
+      }));
+    const ignoredByAgents = referencedBy.length
+      ? []
+      : unique(aiAfterFact.map((message) => message.agentId).filter(Boolean));
+    return {
+      ...fact,
+      confidence: round(Math.min(0.95, 0.55 + fact.evidence.length * 0.15)),
+      evidence: fact.evidence.slice(0, 3),
+      aiUse: {
+        status: referencedBy.length ? "respected" : aiAfterFact.length ? "ignored" : "not_tested",
+        respected: referencedBy.length > 0,
+        ignored: !referencedBy.length && aiAfterFact.length > 0,
+        referencedBy: referencedBy.slice(0, 3),
+        ignoredByAgents,
+      },
+    };
+  });
+
+  const participants = Object.entries(groupBy(facts, "participantName")).map(([participantName, participantFacts]) => ({
+    participantName,
+    facts: participantFacts.map((fact) => fact.id),
+    summaries: participantFacts.map((fact) => fact.summary),
+    respected: participantFacts.filter((fact) => fact.aiUse.respected).length,
+    ignored: participantFacts.filter((fact) => fact.aiUse.ignored).length,
+  }));
+
+  return {
+    summary: facts.length
+      ? `${facts.length} remembered room fact(s) extracted from participant messages.`
+      : "No stable participant preferences or room constraints detected yet.",
+    facts,
+    participants,
+    coverage: {
+      totalFacts: facts.length,
+      respectedFacts: facts.filter((fact) => fact.aiUse.respected).length,
+      ignoredFacts: facts.filter((fact) => fact.aiUse.ignored).length,
+      notTestedFacts: facts.filter((fact) => fact.aiUse.status === "not_tested").length,
+    },
+  };
+}
+
+function summarizeAgentMemoryUse(messages, ledger) {
+  const facts = ledger && Array.isArray(ledger.facts) ? ledger.facts : [];
+  const agentMessages = Array.isArray(messages) ? messages : [];
+  const referenced = facts.filter((fact) =>
+    agentMessages.some((message) => {
+      const rule = memorySignalRules.find((candidate) => candidate.id === fact.ruleId);
+      return memoryRuleMatches(rule, message.content || "");
+    }),
+  ).length;
+  const ignored = facts.filter((fact) => {
+    const rule = memorySignalRules.find((candidate) => candidate.id === fact.ruleId);
+    return agentMessages.length > 0 && !agentMessages.some((message) => memoryRuleMatches(rule, message.content || ""));
+  }).length;
+  return {
+    total: facts.length,
+    referenced,
+    ignored,
+  };
+}
+
+function buildRoomMoodTimeline(room) {
+  const messages = Array.isArray(room.messages) ? room.messages : [];
+  const humanMoodEvents = messages
+    .filter((message) => message.senderType === "human")
+    .map((message) => ({
+      messageId: message.id,
+      senderName: message.senderName,
+      content: message.content,
+      createdAt: message.createdAt,
+      ...inferMood(message.content),
+    }));
+  const agentImpacts = messages
+    .filter((message) => message.senderType === "ai")
+    .map((message) => buildMoodImpactForAiMessage(messages, message))
+    .filter(Boolean);
+  const moodCounts = countBy(humanMoodEvents, "mood");
+  const averageMoodScore = round(average(humanMoodEvents.map((event) => event.score)));
+  const latestMood = humanMoodEvents[humanMoodEvents.length - 1] || null;
+
+  return {
+    summary: humanMoodEvents.length
+      ? `Latest room mood is ${latestMood.mood}; average mood score is ${averageMoodScore}.`
+      : "No human mood evidence captured yet.",
+    currentMood: latestMood ? latestMood.mood : "neutral",
+    averageMoodScore,
+    moodCounts,
+    humanMoodEvents,
+    agentImpacts,
+  };
+}
+
+function inferMood(content = "") {
+  const matches = moodSignalRules
+    .map((rule) => ({
+      mood: rule.mood,
+      score: rule.score,
+      cues: rule.patterns.filter((pattern) => pattern.test(content)).map((pattern) => pattern.source),
+    }))
+    .filter((match) => match.cues.length);
+  if (!matches.length) {
+    return {
+      mood: "neutral",
+      score: 0,
+      confidence: 0.45,
+      cues: [],
+    };
+  }
+  matches.sort((a, b) => Math.abs(b.score) - Math.abs(a.score) || b.cues.length - a.cues.length);
+  const strongest = matches[0];
+  return {
+    mood: strongest.mood,
+    score: strongest.score,
+    confidence: round(Math.min(0.95, 0.55 + strongest.cues.length * 0.15)),
+    cues: strongest.cues.slice(0, 3),
+  };
+}
+
+function buildMoodImpactForAiMessage(messages, aiMessage) {
+  const index = messages.findIndex((message) => message.id === aiMessage.id);
+  if (index === -1) return null;
+  const previousHuman = [...messages.slice(0, index)]
+    .reverse()
+    .find((message) => message.senderType === "human");
+  const nextHuman = messages.slice(index + 1).find((message) => message.senderType === "human");
+  if (!previousHuman || !nextHuman) return null;
+  const before = inferMood(previousHuman.content);
+  const after = inferMood(nextHuman.content);
+  const delta = after.score - before.score;
+  return {
+    messageId: aiMessage.id,
+    agentId: aiMessage.agentId,
+    senderName: aiMessage.senderName,
+    beforeMessageId: previousHuman.id,
+    afterMessageId: nextHuman.id,
+    beforeMood: before.mood,
+    afterMood: after.mood,
+    beforeScore: before.score,
+    afterScore: after.score,
+    delta,
+    impact: delta > 0 ? "improved" : delta < 0 ? "worsened" : "steady",
+  };
+}
+
+function summarizeAgentMoodImpact(agentId, moodTimeline = {}) {
+  const impacts = Array.isArray(moodTimeline.agentImpacts)
+    ? moodTimeline.agentImpacts.filter((impact) => impact.agentId === agentId)
+    : [];
+  const positive = impacts.filter((impact) => impact.delta > 0).length;
+  const negative = impacts.filter((impact) => impact.delta < 0).length;
+  const neutral = impacts.filter((impact) => impact.delta === 0).length;
+  return {
+    total: impacts.length,
+    positive,
+    negative,
+    neutral,
+    score: impacts.length ? round(average(impacts.map((impact) => impact.delta))) : 0,
+    latest: impacts[impacts.length - 1] || null,
+  };
+}
+
+function buildAutomaticReception(room, agentMessages, ledger, moodTimeline) {
+  const allMessages = Array.isArray(room.messages) ? room.messages : [];
+  const moodImpacts = Array.isArray(moodTimeline.agentImpacts) ? moodTimeline.agentImpacts : [];
+  const facts = ledger && Array.isArray(ledger.facts) ? ledger.facts : [];
+  return agentMessages.map((message) => {
+    const index = allMessages.findIndex((candidate) => candidate.id === message.id);
+    const nextMessages = index === -1 ? [] : allMessages.slice(index + 1, index + 4);
+    const nextHumanMessages = nextMessages.filter((candidate) => candidate.senderType === "human");
+    const directReplies = nextHumanMessages.filter((candidate) => candidate.replyToMessageId === message.id);
+    const moodImpact = moodImpacts.find((impact) => impact.messageId === message.id) || null;
+    const referencedFacts = facts.filter((fact) => {
+      const rule = memorySignalRules.find((candidate) => candidate.id === fact.ruleId);
+      return memoryRuleMatches(rule, message.content || "");
+    });
+    const explicitPositive = message.feedback.filter((entry) => entry.sentiment === "positive").length;
+    const explicitNegative = message.feedback.filter((entry) => entry.sentiment === "negative").length;
+    const signals = [];
+    if (moodImpact && moodImpact.delta > 0) signals.push("improved_mood");
+    if (moodImpact && moodImpact.delta < 0) signals.push("worsened_mood");
+    if (directReplies.length) signals.push("drew_human_reply");
+    if (nextHumanMessages.length) signals.push("kept_humans_talking");
+    if (referencedFacts.length) signals.push("respected_memory");
+    if (!nextHumanMessages.length) signals.push("no_followup_yet");
+    if (explicitPositive) signals.push("manual_positive_feedback");
+    if (explicitNegative) signals.push("manual_negative_feedback");
+
+    let sentiment = "unclear";
+    if ((moodImpact && moodImpact.delta > 0) || directReplies.length || referencedFacts.length || explicitPositive > explicitNegative) {
+      sentiment = "positive";
+    }
+    if ((moodImpact && moodImpact.delta < 0) || explicitNegative > explicitPositive) {
+      sentiment = "negative";
+    }
+
+    return {
+      messageId: message.id,
+      agentId: message.agentId,
+      senderName: message.senderName,
+      sentiment,
+      signals,
+      moodImpact,
+      directReplies: directReplies.length,
+      nextHumanMessages: nextHumanMessages.length,
+      referencedMemoryFacts: referencedFacts.map((fact) => ({
+        id: fact.id,
+        label: fact.label,
+        participantName: fact.participantName,
+      })),
+      summary: summarizeAutomaticReception(sentiment, signals),
+    };
+  });
+}
+
+function summarizeAutomaticReception(sentiment, signals) {
+  if (sentiment === "positive") {
+    if (signals.includes("improved_mood")) return "Follow-up mood improved after this message.";
+    if (signals.includes("respected_memory")) return "Message referenced remembered participant context.";
+    if (signals.includes("drew_human_reply")) return "Message drew a direct human reply.";
+    return "Background signals suggest the message helped the room.";
+  }
+  if (sentiment === "negative") {
+    if (signals.includes("worsened_mood")) return "Follow-up mood worsened after this message.";
+    if (signals.includes("manual_negative_feedback")) return "Reviewer feedback marked this message as harmful.";
+    return "Background signals suggest this message may have hurt the room.";
+  }
+  if (signals.includes("no_followup_yet")) return "No follow-up human message was available to judge reception.";
+  return "Reception was steady or unclear from available background signals.";
+}
+
+function buildSocialIntelligenceReview(room, agent, messages, decisions, stats, tagCounts, scorecard, ledger, moodTimeline) {
+  const memoryUse = summarizeAgentMemoryUse(messages, ledger);
+  const moodImpact = summarizeAgentMoodImpact(agent.id, moodTimeline);
+  const automaticReception = buildAutomaticReception(room, messages, ledger, moodTimeline);
+  const latencyScore = latencyToScore(stats.averageResponseLatencyMs);
+  const categories = [
+    {
+      id: "timing",
+      label: "Timing",
+      score: scorecard.timing,
+      verdict: socialVerdict(scorecard.timing),
+      evidence: socialEvidence([
+        tagCounts.good_timing ? `${tagCounts.good_timing} good timing tag(s)` : "",
+        tagCounts.revived_dead_chat ? `${tagCounts.revived_dead_chat} revived chat tag(s)` : "",
+        tagCounts.interrupted_humans ? `${tagCounts.interrupted_humans} interruption tag(s)` : "",
+        tagCounts.killed_momentum ? `${tagCounts.killed_momentum} killed momentum tag(s)` : "",
+      ]),
+    },
+    {
+      id: "restraint",
+      label: "Restraint",
+      score: scorecard.restraint,
+      verdict: socialVerdict(scorecard.restraint),
+      evidence: socialEvidence([
+        `${stats.staySilentDecisions} stay-silent decision(s)`,
+        `${stats.waitDecisions} wait decision(s)`,
+        tagCounts.good_restraint ? `${tagCounts.good_restraint} good restraint tag(s)` : "",
+        tagCounts.should_have_stayed_quiet ? `${tagCounts.should_have_stayed_quiet} should-stay-quiet tag(s)` : "",
+      ]),
+    },
+    {
+      id: "vibe",
+      label: "Vibe",
+      score: boundedScore((scorecard.personalityConsistency + scorecard.socialAwareness + scorecard.fun) / 3),
+      verdict: socialVerdict((scorecard.personalityConsistency + scorecard.socialAwareness + scorecard.fun) / 3),
+      evidence: socialEvidence([
+        tagCounts.matched_group_vibe ? `${tagCounts.matched_group_vibe} matched vibe tag(s)` : "",
+        tagCounts.good_read ? `${tagCounts.good_read} good read tag(s)` : "",
+        tagCounts.wrong_vibe ? `${tagCounts.wrong_vibe} wrong vibe tag(s)` : "",
+        tagCounts.too_assistant_like || tagCounts.too_generic ? "generic assistant voice feedback" : "",
+      ]),
+    },
+    {
+      id: "memory_context",
+      label: "Memory/context",
+      score: memoryScore(memoryUse, tagCounts),
+      verdict: socialVerdict(memoryScore(memoryUse, tagCounts)),
+      evidence: socialEvidence([
+        `${memoryUse.referenced}/${memoryUse.total || 0} remembered fact(s) referenced`,
+        tagCounts.memory_miss ? `${tagCounts.memory_miss} memory miss tag(s)` : "",
+        tagCounts.responded_wrong_person ? `${tagCounts.responded_wrong_person} wrong-person tag(s)` : "",
+      ]),
+    },
+    {
+      id: "mood_impact",
+      label: "Mood impact",
+      score: moodImpactToScore(moodImpact),
+      verdict: socialVerdict(moodImpactToScore(moodImpact)),
+      evidence: socialEvidence([
+        `${moodImpact.positive} positive mood impact(s)`,
+        `${moodImpact.negative} negative mood impact(s)`,
+        moodImpact.latest ? `Latest: ${moodImpact.latest.beforeMood} to ${moodImpact.latest.afterMood}` : "",
+      ]),
+    },
+    {
+      id: "routing",
+      label: "Routing",
+      score: boundedScore(2 + stats.routingSuccessRate * 3 + Math.min(1, stats.routingSelectedCount)),
+      verdict: socialVerdict(2 + stats.routingSuccessRate * 3 + Math.min(1, stats.routingSelectedCount)),
+      evidence: socialEvidence([
+        `${stats.routingSelectedCount} router selection(s)`,
+        `${decisions.length} participation decision(s)`,
+        `${Math.round(stats.routingSuccessRate * 100)}% routing success`,
+      ]),
+    },
+    {
+      id: "latency",
+      label: "Latency",
+      score: latencyScore,
+      verdict: socialVerdict(latencyScore),
+      evidence: socialEvidence([
+        Number.isFinite(stats.averageResponseLatencyMs)
+          ? `${stats.averageResponseLatencyMs} ms average response latency`
+          : "No latency samples yet",
+      ]),
+    },
+  ];
+  const strengths = categories
+    .filter((category) => category.score >= 4)
+    .map((category) => `${category.label}: ${category.verdict}`);
+  const risks = categories
+    .filter((category) => category.score <= 2 || hasSocialRiskTag(category.id, tagCounts))
+    .map((category) => `${category.label}: ${category.verdict}`);
+
+  return {
+    summary: summarizeSocialIntelligence(agent, categories, stats, memoryUse),
+    categories,
+    strengths,
+    risks,
+    concreteEvidence: buildSocialEvidenceExamples(room, messages, decisions, ledger, automaticReception),
+  };
+}
+
+function summarizeSocialIntelligence(agent, categories, stats, memoryUse) {
+  const strongest = [...categories].sort((a, b) => b.score - a.score)[0];
+  const weakest = [...categories].sort((a, b) => a.score - b.score)[0];
+  if (!stats.totalMessages) {
+    return `${agent.name} stayed quiet, so restraint is visible but message-level social evidence is limited.`;
+  }
+  return `${agent.name} is strongest on ${strongest.label.toLowerCase()} and weakest on ${weakest.label.toLowerCase()}; it referenced ${memoryUse.referenced}/${memoryUse.total || 0} remembered room fact(s).`;
+}
+
+function buildSocialEvidenceExamples(room, messages, decisions, ledger, automaticReception = []) {
+  const examples = [];
+  const receptionExample = automaticReception.find((entry) => entry.sentiment !== "unclear") || automaticReception[0];
+  if (receptionExample) {
+    examples.push({
+      type: "automatic_reception",
+      label: "Automatic reception",
+      text: receptionExample.summary,
+      tags: [receptionExample.sentiment, ...receptionExample.signals.slice(0, 2)],
+    });
+  }
+  const feedbackExample = messages.find((message) => Array.isArray(message.feedback) && message.feedback.length);
+  if (feedbackExample) {
+    examples.push({
+      type: "message_feedback",
+      label: "Feedback-tagged message",
+      text: feedbackExample.content,
+      tags: feedbackExample.feedback.map((entry) => entry.tag),
+    });
+  }
+  const selectedDecision = [...decisions].reverse().find((decision) => decision.route && decision.route.selectedAgentId);
+  if (selectedDecision) {
+    examples.push({
+      type: "routing_decision",
+      label: "Router evidence",
+      text: selectedDecision.reason,
+      tags: [selectedDecision.groupState || "active"],
+    });
+  }
+  const respectedFact =
+    ledger &&
+    Array.isArray(ledger.facts) &&
+    ledger.facts.find((fact) => fact.aiUse && fact.aiUse.respected && fact.aiUse.referencedBy.length);
+  if (respectedFact) {
+    examples.push({
+      type: "memory_fact",
+      label: respectedFact.label,
+      text: respectedFact.summary,
+      tags: [respectedFact.aiUse.status],
+    });
+  }
+  return examples.slice(0, 3);
+}
+
+function memoryRuleMatches(rule, content) {
+  if (!rule) return false;
+  return rule.referencePatterns.some((pattern) => pattern.test(content));
+}
+
+function memoryScore(memoryUse, tagCounts) {
+  if (!memoryUse.total) return boundedScore(3 - (tagCounts.memory_miss || 0));
+  return boundedScore(2 + (memoryUse.referenced / memoryUse.total) * 3 - (tagCounts.memory_miss || 0));
+}
+
+function moodImpactToScore(moodImpact) {
+  if (!moodImpact.total) return 3;
+  return boundedScore(3 + moodImpact.positive - moodImpact.negative * 1.5 + moodImpact.score);
+}
+
+function latencyToScore(latencyMs) {
+  if (!Number.isFinite(latencyMs) || latencyMs <= 0) return 3;
+  if (latencyMs <= 800) return 5;
+  if (latencyMs <= 1600) return 4;
+  if (latencyMs <= 3000) return 3;
+  if (latencyMs <= 5000) return 2;
+  return 1;
+}
+
+function socialVerdict(score) {
+  const rounded = boundedScore(score);
+  if (rounded >= 5) return "excellent";
+  if (rounded >= 4) return "strong";
+  if (rounded >= 3) return "mixed";
+  if (rounded >= 2) return "risky";
+  return "poor";
+}
+
+function socialEvidence(items) {
+  const values = items.filter(Boolean);
+  return values.length ? values : ["No direct evidence yet"];
+}
+
+function hasSocialRiskTag(categoryId, tagCounts) {
+  const riskTags = {
+    timing: ["interrupted_humans", "responded_too_late", "responded_too_often", "killed_momentum"],
+    restraint: ["should_have_stayed_quiet", "interrupted_humans", "responded_too_often"],
+    vibe: ["wrong_vibe", "wrong_tone", "too_assistant_like", "too_generic", "misread_room"],
+    memory_context: ["memory_miss", "responded_wrong_person", "ignored_quiet_person"],
+    mood_impact: ["killed_momentum", "escalated_tension", "made_chat_less_human"],
+    routing: ["responded_wrong_person", "ignored_quiet_person"],
+    latency: ["responded_too_late"],
+  };
+  return (riskTags[categoryId] || []).some((tag) => tagCounts[tag]);
+}
+
+function slugifyMemoryId(value) {
+  return String(value || "participant")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40) || "participant";
 }
 
 function pickMessages(transcript, agentMessages, sentiment) {
@@ -1452,7 +2077,7 @@ function suggestedAlternativeForMessage(message) {
   if (tags.some((tag) => ["too_verbose", "repeated_obvious_info"].includes(tag))) {
     return "Use one short question or concrete next step instead of summarizing.";
   }
-  if (tags.some((tag) => ["wrong_vibe", "wrong_tone", "misread_room", "responded_wrong_person"].includes(tag))) {
+  if (tags.some((tag) => ["wrong_vibe", "wrong_tone", "misread_room", "memory_miss", "responded_wrong_person"].includes(tag))) {
     return "Read the room more carefully and target the person or tension that actually needs help.";
   }
   if (tags.some((tag) => ["out_of_character", "broke_character", "too_assistant_like", "too_generic"].includes(tag))) {
@@ -1476,6 +2101,7 @@ function inferFailureModes(stats, tagCounts) {
   if (tagCounts.too_verbose || tagCounts.repeated_obvious_info) modes.push("Too verbose");
   if (tagCounts.wrong_vibe || tagCounts.wrong_tone || tagCounts.misread_room) modes.push("Wrong vibe");
   if (tagCounts.responded_wrong_person) modes.push("Wrong person targeting");
+  if (tagCounts.memory_miss) modes.push("Memory miss");
   if (tagCounts.ignored_quiet_person) modes.push("Ignored quiet participant");
   if (tagCounts.too_assistant_like || tagCounts.too_generic) modes.push("Generic assistant voice");
   if (tagCounts.out_of_character || tagCounts.broke_character) modes.push("Personality drift");
@@ -1492,7 +2118,7 @@ function inferPolicyRationale(stats, tagCounts) {
   if (tagCounts.too_verbose || tagCounts.repeated_obvious_info) {
     return "The next policy keeps messages shorter and favors direct questions over summaries.";
   }
-  if (tagCounts.ignored_quiet_person || tagCounts.responded_wrong_person) {
+  if (tagCounts.ignored_quiet_person || tagCounts.responded_wrong_person || tagCounts.memory_miss) {
     return "The next policy pays more attention to who has not been included.";
   }
   if (tagCounts.too_assistant_like || tagCounts.too_generic || tagCounts.out_of_character) {
@@ -1517,8 +2143,8 @@ function generateImprovedPolicy(agent, stats, tagCounts, room) {
   if (tagCounts.too_verbose || tagCounts.repeated_obvious_info) {
     clauses.push("Keep interventions to one short message and avoid restating obvious context.");
   }
-  if (tagCounts.ignored_quiet_person || tagCounts.responded_wrong_person) {
-    clauses.push("Before speaking, identify who has been least heard and whether the message should target them.");
+  if (tagCounts.ignored_quiet_person || tagCounts.responded_wrong_person || tagCounts.memory_miss) {
+    clauses.push("Before speaking, identify who has been least heard, what each person wants, and whether the message should target them.");
   }
   if (tagCounts.missed_social_tension || tagCounts.escalated_tension) {
     clauses.push("When tension is present, name the unresolved constraint lightly instead of adding options.");
@@ -1729,6 +2355,8 @@ function buildEvidenceManifest(room) {
   const feedback = room.feedback || [];
   const sessionFeedback = room.sessionFeedback || [];
   const runHistory = room.runHistory || [];
+  const memoryLedger = buildRoomMemoryLedger(room);
+  const moodTimeline = buildRoomMoodTimeline(room);
 
   return {
     scenario: {
@@ -1758,6 +2386,21 @@ function buildEvidenceManifest(room) {
       messageFeedback: feedback.length,
       sessionFeedback: sessionFeedback.length,
       tagCounts: countBy(feedback, "tag"),
+    },
+    memory: {
+      facts: memoryLedger.coverage.totalFacts,
+      respectedFacts: memoryLedger.coverage.respectedFacts,
+      ignoredFacts: memoryLedger.coverage.ignoredFacts,
+      participantProfiles: memoryLedger.participants.length,
+    },
+    mood: {
+      currentMood: moodTimeline.currentMood,
+      averageMoodScore: moodTimeline.averageMoodScore,
+      moodCounts: moodTimeline.moodCounts,
+      humanMoodEvents: moodTimeline.humanMoodEvents.length,
+      agentMoodImpacts: moodTimeline.agentImpacts.length,
+      improvedImpacts: moodTimeline.agentImpacts.filter((impact) => impact.impact === "improved").length,
+      worsenedImpacts: moodTimeline.agentImpacts.filter((impact) => impact.impact === "worsened").length,
     },
     latency: {
       responseLatencySamples: aiMessages.filter((message) => Number.isFinite(message.latencyMs)).length,
@@ -1869,6 +2512,10 @@ function compareReports(previousReport, currentAgentReports) {
           current.stats.humanConversationDelta - previous.stats.humanConversationDelta,
         humanConversationLiftDelta:
           current.stats.humanConversationLift - previous.stats.humanConversationLift,
+        memoryReferenceDelta:
+          current.stats.memoryReferenceRate - previous.stats.memoryReferenceRate,
+        moodImpactDelta:
+          current.stats.moodImpactScore - previous.stats.moodImpactScore,
         timingScoreDelta: current.scorecard.timing - previous.scorecard.timing,
         restraintScoreDelta: current.scorecard.restraint - previous.scorecard.restraint,
       };
@@ -1894,6 +2541,8 @@ function comparisonSnapshot(agentReport) {
     humanConversationDelta: agentReport.stats.humanConversationDelta,
     humanConversationLift: agentReport.stats.humanConversationLift,
     humanMomentumDirection: agentReport.stats.humanMomentumDirection,
+    memoryReferenceRate: agentReport.stats.memoryReferenceRate,
+    moodImpactScore: agentReport.stats.moodImpactScore,
   };
 }
 
@@ -2186,6 +2835,8 @@ function buildAgentRoutingScores(agent, scorecard, stats, room) {
 
 function createExport(room) {
   const serialized = serializeRoom(room);
+  const roomMemoryLedger = buildRoomMemoryLedger(room);
+  const roomMoodTimeline = buildRoomMoodTimeline(room);
   const runs = [
     ...(Array.isArray(serialized.runHistory) ? serialized.runHistory.map(exportRunSnapshot) : []),
     exportRunSnapshot({
@@ -2208,6 +2859,8 @@ function createExport(room) {
       reportJobs: serialized.reportJobs,
       feedback: serialized.feedback,
       sessionFeedback: serialized.sessionFeedback,
+      roomMemoryLedger,
+      roomMoodTimeline,
       reports: serialized.reports.filter(
         (report) =>
           report.sessionNumber === serialized.sessionNumber &&
@@ -2219,6 +2872,8 @@ function createExport(room) {
     exportedAt: new Date().toISOString(),
     room: serialized,
     transcript: exportTranscript(serialized.messages),
+    roomMemoryLedger,
+    roomMoodTimeline,
     runs,
   };
 }
@@ -2246,6 +2901,8 @@ function exportRunSnapshot(run) {
     reportJobs: Array.isArray(run.reportJobs) ? run.reportJobs : [],
     feedback: Array.isArray(run.feedback) ? run.feedback : [],
     sessionFeedback: Array.isArray(run.sessionFeedback) ? run.sessionFeedback : [],
+    roomMemoryLedger: run.roomMemoryLedger || latestReportValue(run.reports, "roomMemoryLedger") || null,
+    roomMoodTimeline: run.roomMoodTimeline || latestReportValue(run.reports, "roomMoodTimeline") || null,
     reports: Array.isArray(run.reports) ? run.reports : [],
   };
 }
@@ -2350,6 +3007,21 @@ function countBy(items, key) {
     acc[value] = (acc[value] || 0) + 1;
     return acc;
   }, {});
+}
+
+function groupBy(items, key) {
+  return items.reduce((acc, item) => {
+    const value = item[key] || "unknown";
+    if (!acc[value]) acc[value] = [];
+    acc[value].push(item);
+    return acc;
+  }, {});
+}
+
+function latestReportValue(reports, key) {
+  if (!Array.isArray(reports) || !reports.length) return null;
+  const report = reports[reports.length - 1];
+  return report && report[key] ? report[key] : null;
 }
 
 function average(values) {

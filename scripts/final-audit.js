@@ -260,6 +260,8 @@ function demoReportCheck(exported) {
   const performance = latestReport.systemPerformance || {};
   const modelRouting = latestReport.modelRoutingSummary || {};
   const evidence = latestReport.evidenceManifest || {};
+  const memory = latestReport.roomMemoryLedger || {};
+  const mood = latestReport.roomMoodTimeline || {};
   const latestPlan = modelRouting.latestPlan || {};
   const agentReports = Array.isArray(latestReport.agents) ? latestReport.agents : [];
   const ok =
@@ -283,6 +285,10 @@ function demoReportCheck(exported) {
     evidence.decisions.agentDecisions > 0 &&
     evidence.feedback &&
     evidence.feedback.messageFeedback >= 0 &&
+    evidence.memory &&
+    evidence.memory.facts >= 1 &&
+    evidence.mood &&
+    evidence.mood.humanMoodEvents >= 1 &&
     evidence.latency &&
     evidence.latency.responseLatencySamples >= 0 &&
     Array.isArray(evidence.agentConfigs) &&
@@ -299,9 +305,22 @@ function demoReportCheck(exported) {
         "humanConversationLift" in agent.stats &&
         "humanMomentumDirection" in agent.stats &&
         agent.stats.targetUserCounts &&
+        "memoryReferenceRate" in agent.stats &&
+        "moodImpactScore" in agent.stats &&
         agent.decisionReview &&
         agent.decisionReview.shouldHaveSpoken &&
         Array.isArray(agent.decisionReview.sampledDecisions),
+    ) &&
+    memory.coverage &&
+    memory.coverage.totalFacts >= 1 &&
+    Array.isArray(mood.humanMoodEvents) &&
+    mood.humanMoodEvents.length >= 1 &&
+    agentReports.every(
+      (agent) =>
+        agent.socialIntelligenceReview &&
+        Array.isArray(agent.socialIntelligenceReview.categories) &&
+        agent.socialIntelligenceReview.categories.some((category) => category.id === "mood_impact") &&
+        Array.isArray(agent.automaticReception),
     ) &&
     agentReports.every((agent) => agent.routingScores && agent.routingRecommendation) &&
     agentReports.some(
@@ -312,8 +331,8 @@ function demoReportCheck(exported) {
     name: "demo:report-contract",
     status: ok ? "pass" : "fail",
     detail: ok
-      ? `${agentReports.length} agent reports include routing, performance, model-routing, eval-input, and decision-review evidence`
-      : "latest report missing agent selection rules, model routing, eval-input manifest, targeting stats, decision review, routing feedback, routing scores, or system performance fields",
+      ? `${agentReports.length} agent reports include routing, performance, memory, mood, automatic reception, social review, eval-input, and decision-review evidence`
+      : "latest report missing agent selection rules, model routing, memory, mood, automatic reception, social review, eval-input manifest, targeting stats, decision review, routing feedback, routing scores, or system performance fields",
   };
 }
 
@@ -332,6 +351,8 @@ function demoExportCheck(exported) {
   const ok =
     exported.exportedAt &&
     exported.room &&
+    exported.roomMemoryLedger &&
+    exported.roomMoodTimeline &&
     transcript.length > 0 &&
     runs.length >= 2 &&
     baselineRun &&
@@ -344,6 +365,7 @@ function demoExportCheck(exported) {
     improvedRun.transcript.length > 0 &&
     Array.isArray(improvedRun.reports) &&
     improvedRun.reports.length > 0 &&
+    runs.every((run) => run.roomMemoryLedger && run.roomMoodTimeline) &&
     transcript.every((message) => "senderId" in message) &&
     transcript.every((message) => "feedbackTags" in message) &&
     transcript.every((message) => "replyToMessageId" in message) &&

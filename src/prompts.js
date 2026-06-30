@@ -119,6 +119,8 @@ function buildReportJudgePrompt({ room, draftReport }) {
           "Did it preserve its personality?",
           "Did it sound natural in a group chat?",
           "Did it increase or decrease human conversation?",
+          "Did it improve, worsen, or stabilize human mood?",
+          "Did it remember participant preferences and constraints?",
           "Did it miss tension, jokes, or quieter participants?",
         ],
         output: {
@@ -179,6 +181,8 @@ function buildReportEvalInputs(room, draftReport) {
     routingDecisions: Array.isArray(room.routingDecisions) ? room.routingDecisions : [],
     messageFeedback: Array.isArray(room.feedback) ? room.feedback : [],
     sessionFeedback: Array.isArray(room.sessionFeedback) ? room.sessionFeedback : [],
+    roomMemoryLedger: draftReport && draftReport.roomMemoryLedger ? draftReport.roomMemoryLedger : null,
+    roomMoodTimeline: draftReport && draftReport.roomMoodTimeline ? draftReport.roomMoodTimeline : null,
     messageLatency: aiMessages.map((message) => ({
       messageId: message.id,
       agentId: message.agentId || null,
@@ -228,6 +232,8 @@ function compactPromptReport(report) {
     sessionFeedbackSummary: report.sessionFeedbackSummary,
     modelRoutingSummary: report.modelRoutingSummary,
     evidenceManifest: report.evidenceManifest,
+    roomMemoryLedger: report.roomMemoryLedger,
+    roomMoodTimeline: report.roomMoodTimeline,
     systemPerformance: report.systemPerformance,
     agents: report.agents.map((agentReport) => ({
       agentId: agentReport.agentId,
@@ -240,6 +246,8 @@ function compactPromptReport(report) {
       bestMessages: agentReport.bestMessages,
       worstMessages: agentReport.worstMessages,
       decisionReview: agentReport.decisionReview,
+      socialIntelligenceReview: agentReport.socialIntelligenceReview,
+      automaticReception: agentReport.automaticReception,
       routingScores: agentReport.routingScores,
       policyDiff: agentReport.policyDiff,
       routingRecommendation: agentReport.routingRecommendation,
